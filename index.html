@@ -1,0 +1,142 @@
+<html>
+    <style>
+
+body{
+    /* background: #8abeb7; */
+    text-align: left;
+    overflow-x: scroll;
+    font-family : "TheSansMono Office";
+    font-size : 11px;
+    display: flex;
+    flex-direction: column;
+
+}
+
+scroll-bar{
+    display: none;
+}
+
+::-webkit-scrollbar{
+    display: none;
+}
+
+.main {
+    /* height: 440px; */
+    display:flex;
+    flex-direction: row;
+}
+
+.editor{
+    width: 400px !important;
+}
+
+.editor-display{
+    padding: -1px !important;
+    border: 1px solid !important;
+    border-radius: 0px !important;
+    background: rgb(0, 0, 0, 0.1) !important;
+}
+
+.text{
+    display:block;
+    position: relative;
+    margin: 10px;
+}
+
+#canvas-container{
+    margin: 10px;
+    display:block;
+    position: relative;
+    border: 1px solid;
+}
+
+</style>
+<body>
+    
+    <div class="main">
+        <div id="canvas-container"></div>
+        <div class="text" id="editor"></div>
+    </div>
+
+</body>
+
+<script src="./Editor.js"></script>
+<script src="./Vec.js"></script>
+<script>
+
+    var strokes = {a: [new Vec(-100, 0), new Vec(100, 0)], b:[new Vec(0, -100), new Vec(0, 100)]};
+
+    CanvasRenderingContext2D.prototype.lineToVec = function(vec){
+        this.lineTo(vec.x, vec.y);
+    }
+
+    CanvasRenderingContext2D.prototype.moveToVec = function(vec){
+        this.moveTo(vec.x, vec.y);
+    }
+
+    CanvasRenderingContext2D.prototype.bezierCurveTo = function(cv1, cv2, ev){
+        this.bezierCurveTo(cv1.x, cv1.y, cv2.x, cv2.y, ev.x, ev.y);
+    }
+
+    CanvasRenderingContext2D.prototype.drawZig = function(vecs){
+        try {
+            this.moveToVec(vecs[0]);
+            for (let vec of vecs){
+                this.lineToVec(vec);
+            }
+        } catch {
+            console.log('Illegal line segs: ', vecs);
+        }
+    }
+
+    CanvasRenderingContext2D.prototype.draw = function(zigs){
+        for (let zigName in zigs){
+            this.drawZig(zigs[zigName]);
+        }
+        this.stroke();
+    }
+
+    let submitFunc = function(text) {
+        let textlines = text.split('\n');
+        
+        let currInstr, remainingArgs = 0;
+
+        let instrs = {
+            name: {remainingArgs: 2},
+            angle: {remainingArgs:1},
+            length: {remainingArgs: 1}
+        }
+
+        let argStack = [];
+
+        for (let expr of textlines) {
+            let tokens = expr.split(' ');
+            for (let token of tokens) {
+                if (argStack.length == 0){
+                    argStack.push(token);
+                    remainingArgs = instrs[token].remainingArgs;
+                }
+            }
+        }
+    }
+
+    let canvas = document.createElement('canvas'),
+        ctx = canvas.getContext('2d'),
+        dpr = window.devicePixelRatio;
+    canvas.width  = 400 * dpr;
+    canvas.height = 400 * dpr;
+    canvas.style.width  = 400;
+    canvas.style.height = 400;
+    document.getElementById('canvas-container').appendChild(canvas);
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.scale(dpr, dpr);
+
+    let editorElement = document.getElementById('editor');
+    let editor = new Editor(editorElement, submitFunc);
+
+    ctx.draw(strokes);
+
+</script>
+
+</html>
+
