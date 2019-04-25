@@ -49,8 +49,7 @@ class Editor{
         this.edit.setAttribute("spellcheck", "false");
         this.edit.setAttribute('class', 'editor');
     
-        for (let prop in this.textStyle) this.edit.style[prop] = this.textStyle[prop];
-        for (let prop in this.textCodeStyle) this.edit.style[prop] = this.textCodeStyle[prop];
+        Object.assign(this.edit.style, this.textStyle, this.textCodeStyle);
 
         container.appendChild(this.edit);
 

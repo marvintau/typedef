@@ -64,7 +64,11 @@ scroll-bar{
 <script src="./Vec.js"></script>
 <script>
 
-    var strokes = {a: [new Vec(-100, 0), new Vec(100, 0)], b:[new Vec(0, -100), new Vec(0, 100)]};
+    var strokes = {};
+
+    Array.prototype.last = function(){
+        return this[this.length - 1];
+    }
 
     CanvasRenderingContext2D.prototype.lineToVec = function(vec){
         this.lineTo(vec.x, vec.y);
@@ -80,8 +84,9 @@ scroll-bar{
 
     CanvasRenderingContext2D.prototype.drawZig = function(vecs){
         try {
-            this.moveToVec(vecs[0]);
-            for (let vec of vecs){
+            let [first, ...rest] = vecs;
+            this.moveToVec(first);
+            for (let vec of rest){
                 this.lineToVec(vec);
             }
         } catch {
@@ -90,34 +95,163 @@ scroll-bar{
     }
 
     CanvasRenderingContext2D.prototype.draw = function(zigs){
+        this.beginPath();
         for (let zigName in zigs){
-            this.drawZig(zigs[zigName]);
+            if(zigs[zigName].attr.hidden !== "true")
+                this.drawZig(zigs[zigName].path);
         }
         this.stroke();
     }
 
-    let submitFunc = function(text) {
-        let textlines = text.split('\n');
-        
-        let currInstr, remainingArgs = 0;
+    let tokenExec = function(tokens){
 
-        let instrs = {
-            name: {remainingArgs: 2},
-            angle: {remainingArgs:1},
-            length: {remainingArgs: 1}
+        for (;tokens.length > 0;){
+            // try{
+            let args = instrs[tokens[0]].args,
+                expr = args === "*" ? 
+                       tokens.splice(0) :
+                       tokens.splice(0, args);
+            let [name, ...params] = expr;
+                instrs[name].func(...params);
+            // } catch {
+            //     console.log(`undefined: "${name}"`);
+            //     tokens.splice(0, 1);
+            // }
         }
+            
+    }
 
-        let argStack = [];
+    let state = {
+        path : {default: [new Vec(0,0)]},
+        angle : {default: 0}
+    }
 
-        for (let expr of textlines) {
-            let tokens = expr.split(' ');
-            for (let token of tokens) {
-                if (argStack.length == 0){
-                    argStack.push(token);
-                    remainingArgs = instrs[token].remainingArgs;
-                }
+    let gets = (key) => {
+        return state[key].curr;
+    }
+
+    let sets = (key, val) => {
+        state[key].curr = val;
+        return true;
+    }
+
+    let resets = (key) => {
+        if(Array.isArray(state[key].default))
+            state[key].curr = state[key].default.map(e => e.copy());
+        else if (typeof state[key].default === 'object')
+            state[key].curr = state[key].default.copy();
+        else
+            state[key].curr = state[key].default;
+    }
+
+    let adds = (key, defaultValue) => {
+        state[key] = {curr: undefined, default: defaultValue}
+    }
+
+    let inits = () => {
+        for (let key in state){
+            resets(key);
+        }
+    }
+
+    let instrs = {
+
+        end:{
+            args: 1,
+            func(name){
+                console.log("unnamed path", JSON.stringify(gets('path')));
+                ctx.beginPath();
+                ctx.drawZig(gets('path').splice(0));
+                ctx.stroke();
+                resets('path');
+            }
+        },
+
+        named: {
+            args: 2,
+            func(name){
+                strokes[name] = {path: gets('path').splice(0), attr:{}};
+                console.log(JSON.stringify(gets('path')));
+                resets('path');
+            }
+        },
+
+        ang: {
+            args: 2,
+            func(angle){
+                sets('angle', parseFloat(angle));
+            }
+        },
+
+        len: {
+            args: 2,
+            func(length){
+                console.log(state);
+                let newVec = (new Vec(gets('angle'))).mult(length).add(gets('path').last());
+                gets('path').push(newVec);
+                resets('angle');
+            }
+        },
+
+        set: {
+            args: 4,
+            func(name, attr, value){
+                strokes[name].attr[attr] = value;
+            }
+        },
+
+        def: {
+            args: '*',
+            func(...args){
+                let [name, argc, ...rest] = args;
+                
+                // if(name in instrs)
+                //     throw Error('existing function');
+
+                let argv = rest.splice(0, parseInt(argc));
+
+                for (let arg of argv) if (arg in instrs)
+                    throw Error(`arg name [${arg}] shouldn't be same as reserved keyword`);
+
+                console.log('argv ', argv);
+                console.log('rest ', rest);
+                
+                let theArgMappingTable = argv.map(arg => rest.indexOf(arg));
+                console.log('angleMapping ', theArgMappingTable);
+                instrs[name] = {
+                    args: parseInt(argc)+1,
+                    func: (function(argMappingTable, tokens){
+                        return function(...funcArgs){
+                            for (let i = 0; i < funcArgs.length; i++){
+                                tokens[argMappingTable[i]] = funcArgs[i];
+                            }
+                            console.log(tokens)
+                            tokenExec(tokens.slice());
+                        }
+                    })(theArgMappingTable, rest)
+                };
             }
         }
+    }
+
+
+    let submitFunc = function(text) {
+
+        let textlines = text.split(';');
+
+        ctx.save();
+        ctx.setTransform(1,0,0,1,0,0);
+        // Will always clear the right space
+        ctx.clearRect(0, 0, dpr*ctx.canvas.width, dpr*ctx.canvas.height);
+        ctx.restore();
+
+        for (let expr of textlines) {
+            let tokens = expr.trim().split(/[\s\n]+/);
+            console.log(tokens);
+            tokenExec(tokens);
+        }
+
+        ctx.draw(strokes);
     }
 
     let canvas = document.createElement('canvas'),
@@ -133,8 +267,8 @@ scroll-bar{
 
     let editorElement = document.getElementById('editor');
     let editor = new Editor(editorElement, submitFunc);
-
-    ctx.draw(strokes);
+    
+    inits();
 
 </script>
 
