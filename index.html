@@ -62,9 +62,10 @@ scroll-bar{
 
 <script src="./Editor.js"></script>
 <script src="./Vec.js"></script>
+<script src="./Geom.js"></script>
 <script>
 
-    let sketch = [{type:"bounding", bounding:[new Vec(1, 1), new Vec(-1, 1), new Vec(-1, -1), new Vec(1, -1)]}];
+    let sketch = [{type:"bounding", bounding:[new Vec(0.5, 0.5), new Vec(-0.5, 0.5), new Vec(-0.5, -0.5), new Vec(0.5, -0.5)]}];
 
     Array.prototype.last = function(){
         return this[this.length - 1];
@@ -85,6 +86,7 @@ scroll-bar{
     CanvasRenderingContext2D.prototype.drawZig = function(vecs){
         try {
             let [first, ...rest] = vecs;
+            console.log(first.mult(canvas.height/2*dpr));
             this.moveToVec(first.mult(canvas.height/2*dpr));
             for (let vec of rest){
                 this.lineToVec(vec.mult(canvas.height/2*dpr));
@@ -95,18 +97,30 @@ scroll-bar{
     }
 
     CanvasRenderingContext2D.prototype.draw = function(){
-        
+
+        this. 
         this.beginPath();
         for (let element of sketch){
-            if(element.type === 'path')
-            this.drawZig(element.path);
+            if(element.type === 'bounding')
+            this.drawZig(element.bounding);
         }
+        this.closePath();
         this.stroke();
+
+        // this.beginPath();
+        // for (let element of sketch){
+        //     if(element.type === 'path')
+        //     this.drawZig(element.path);
+        // }
+        // this.stroke();
     }
 
     let tokenExec = function(tokens){
 
         for (;tokens.length > 0;){
+            if (!(tokens[0] in instrs)) {
+                tokens.splice(0, 1); continue;
+            };
             let args = instrs[tokens[0]].args,
                 expr = args === "*" ? 
                        tokens.splice(0) :
@@ -210,17 +224,17 @@ scroll-bar{
 
         let textlines = text.split(';');
 
-        ctx.save();
-        ctx.setTransform(1,0,0,1,0,0);
-        // Will always clear the right space
-        ctx.clearRect(0, 0, dpr*ctx.canvas.width, dpr*ctx.canvas.height);
-        ctx.restore();
-
         for (let expr of textlines) {
             let tokens = expr.trim().split(/[\s\n]+/);
             console.log(tokens);
             tokenExec(tokens);
         }
+
+        ctx.save();
+        ctx.setTransform(1,0,0,1,0,0);
+        // Will always clear the right space
+        ctx.clearRect(0, 0, dpr*ctx.canvas.width, dpr*ctx.canvas.height);
+        ctx.restore();
 
         ctx.draw();
     }
@@ -242,9 +256,11 @@ scroll-bar{
     inits();
 
 </script>
-<pre>
-下一步的操作：
+<pre style="width: 400px; white-space: pre-wrap; margin:20px; font-family:'TheSansMono Office';">
+接下来：
+
 1. 设计path切分bounding的方法，使得path并不需要指明其长度，而能够放进bounding并切分它
+
 2. 重新设计sketch的数据结构
 </pre>
 </html>
