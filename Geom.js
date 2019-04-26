@@ -79,8 +79,9 @@ function segCross(seg1, seg2){
 
 function lineSplitPoly(lineList, polyList){
     
-    let lineSegs = toSegs(lineList),
-        polySegs = toSegs(polyList.concat(polyList[0].copy()));
+    let actualPolyList = polyList.concat(polyList[0].copy()),
+        lineSegs = toSegs(lineList),
+        polySegs = toSegs(actualPolyList);
     
     let enter,
         leave,
@@ -127,27 +128,14 @@ function lineSplitPoly(lineList, polyList){
 
     }
 
-    return intersection;
-}
-
-let head1 = new Vec(-1, -1),
-    tail1 = new Vec( 1,  1),
-    head2 = new Vec( 1, -1),
-    tail2 = new Vec(-1,  1);
-
-// console.log(segVecCross(head1, tail1, head2, tail2));
-
-function testGenPoly(numOfEdge, radius){
-    return Array(numOfEdge).fill(0)
-        .map((_, i) => new Vec(i/numOfEdge * 360).mult(radius));
+    if (enter < leave) {
+        intersection.reverse();
+    } else {
+        [enter, leave] = [leave, enter];
     }
 
-let poly = testGenPoly(4, 20);
-let vec1 = [new Vec(400, 400), new Vec(8, 8), new Vec(1, 1), new Vec(-8, -8), new Vec(-400, -400)];
-let vec2 = [new Vec(8, 8), new Vec(-8, -8)];
-let vec3 = [new Vec(8, 8), new Vec(1, 1), new Vec(-8, -8)];
-// console.log(toPolyArea(toSegs(poly.concat(poly[0].copy()))));
-// console.log(toPolyCentroid(poly));
+    let left  = actualPolyList.slice(enter, leave + 1).concat(intersection),
+        right = actualPolyList.slice(1, enter+1).concat(intersection.reverse()).concat(actualPolyList.slice(leave));
 
-// console.log(lineSplitPoly(vec1, poly));
-console.log(lineSplitPoly(vec1, poly));
+    return {left, right};
+}
