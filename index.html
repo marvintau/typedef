@@ -64,7 +64,7 @@ scroll-bar{
 <script src="./Vec.js"></script>
 <script>
 
-    var strokes = {};
+    let sketch = [{type:"bounding", bounding:[new Vec(1, 1), new Vec(-1, 1), new Vec(-1, -1), new Vec(1, -1)]}];
 
     Array.prototype.last = function(){
         return this[this.length - 1];
@@ -85,20 +85,21 @@ scroll-bar{
     CanvasRenderingContext2D.prototype.drawZig = function(vecs){
         try {
             let [first, ...rest] = vecs;
-            this.moveToVec(first);
+            this.moveToVec(first.mult(canvas.height/2*dpr));
             for (let vec of rest){
-                this.lineToVec(vec);
+                this.lineToVec(vec.mult(canvas.height/2*dpr));
             }
         } catch {
             console.log('Illegal line segs: ', vecs);
         }
     }
 
-    CanvasRenderingContext2D.prototype.draw = function(zigs){
+    CanvasRenderingContext2D.prototype.draw = function(){
+        
         this.beginPath();
-        for (let zigName in zigs){
-            if(zigs[zigName].attr.hidden !== "true")
-                this.drawZig(zigs[zigName].path);
+        for (let element of sketch){
+            if(element.type === 'path')
+            this.drawZig(element.path);
         }
         this.stroke();
     }
@@ -106,17 +107,12 @@ scroll-bar{
     let tokenExec = function(tokens){
 
         for (;tokens.length > 0;){
-            // try{
             let args = instrs[tokens[0]].args,
                 expr = args === "*" ? 
                        tokens.splice(0) :
                        tokens.splice(0, args);
             let [name, ...params] = expr;
                 instrs[name].func(...params);
-            // } catch {
-            //     console.log(`undefined: "${name}"`);
-            //     tokens.splice(0, 1);
-            // }
         }
             
     }
@@ -154,24 +150,13 @@ scroll-bar{
         }
     }
 
+
     let instrs = {
 
         end:{
             args: 1,
             func(name){
-                console.log("unnamed path", JSON.stringify(gets('path')));
-                ctx.beginPath();
-                ctx.drawZig(gets('path').splice(0));
-                ctx.stroke();
-                resets('path');
-            }
-        },
-
-        named: {
-            args: 2,
-            func(name){
-                strokes[name] = {path: gets('path').splice(0), attr:{}};
-                console.log(JSON.stringify(gets('path')));
+                sketch.push({type:'path', path: gets('path')});
                 resets('path');
             }
         },
@@ -193,31 +178,18 @@ scroll-bar{
             }
         },
 
-        set: {
-            args: 4,
-            func(name, attr, value){
-                strokes[name].attr[attr] = value;
-            }
-        },
-
         def: {
             args: '*',
             func(...args){
                 let [name, argc, ...rest] = args;
                 
-                // if(name in instrs)
-                //     throw Error('existing function');
-
                 let argv = rest.splice(0, parseInt(argc));
 
                 for (let arg of argv) if (arg in instrs)
                     throw Error(`arg name [${arg}] shouldn't be same as reserved keyword`);
-
-                console.log('argv ', argv);
-                console.log('rest ', rest);
                 
                 let theArgMappingTable = argv.map(arg => rest.indexOf(arg));
-                console.log('angleMapping ', theArgMappingTable);
+
                 instrs[name] = {
                     args: parseInt(argc)+1,
                     func: (function(argMappingTable, tokens){
@@ -233,7 +205,6 @@ scroll-bar{
             }
         }
     }
-
 
     let submitFunc = function(text) {
 
@@ -251,7 +222,7 @@ scroll-bar{
             tokenExec(tokens);
         }
 
-        ctx.draw(strokes);
+        ctx.draw();
     }
 
     let canvas = document.createElement('canvas'),
@@ -271,6 +242,10 @@ scroll-bar{
     inits();
 
 </script>
-
+<pre>
+下一步的操作：
+1. 设计path切分bounding的方法，使得path并不需要指明其长度，而能够放进bounding并切分它
+2. 重新设计sketch的数据结构
+</pre>
 </html>
 
