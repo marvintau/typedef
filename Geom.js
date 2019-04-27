@@ -146,8 +146,8 @@ function splitPoly(lineList, polyList){
         [enter, leave] = [leave, enter];
     }
 
-    let left  = actualPolyList.slice(enter, leave + 1).concat(intersection),
-        right = actualPolyList.slice(1, enter+1).concat(intersection.reverse()).concat(actualPolyList.slice(leave));
+    let left  = actualPolyList.slice(enter+1, leave + 1).concat(intersection.map(e=>e.copy())),
+        right = actualPolyList.slice(1, enter+1).concat(intersection.reverse()).concat(actualPolyList.slice(leave+1));
 
     return {left, right};
 }
@@ -169,42 +169,4 @@ function fromStrokeSpec(len, angle, curv=0, shape=0){
     }
 
     return s;
-}
-
-class Bound {
-    constructor(bound){
-        this.bound = bound;
-        this.centroid = toPolyCentroid(bound);
-        this.strokes = [];
-        this.children = [];
-    }
-
-    addStroke({angle, curv, shape}, attr){
-        let len = diameter(angle, this.bound) * 0.9,
-            stroke = fromStrokeSpec(len, angle, curv, shape);
-        this.strokes.push(stroke);
-
-        if (attr.splitting) {
-            if(this.children.length === 0){
-                let {left, right} = splitPoly(stroke, this.bound);
-                this.children.push(new Bound(left), new Bound(right));
-            } else {
-                let newChildren = [];
-                while(this.children.length > 0 ) {
-                    let {left, right} = splitPoly(stroke, this.children.pop());
-                    this.children
-                }
-            }
-        }
-    }
-
-    draw(ctx){
-        ctx.drawBounding(this.bound);
-        for (let stroke of this.strokes){
-            ctx.drawStroke(stroke);
-        }
-        for (let child of this.children){
-            child.draw(ctx);
-        }
-    }
 }

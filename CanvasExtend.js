@@ -33,11 +33,16 @@ CanvasRenderingContext2D.prototype.drawZig = function(vecs){
     }
 }
 
-CanvasRenderingContext2D.prototype.drawBounding = function(vecs){
+CanvasRenderingContext2D.prototype.drawBound = function(vecs){
+
+    let shrinked = polyShrinkByLength(vecs, 0.1);
+
+    let centroid = toPolyCentroid(vecs);
+    this.point(centroid.mult(this.canvas.height/2));
 
     this.strokeStyle = 'gray';
     this.beginPath();
-    this.drawZig(vecs);
+    this.drawZig(shrinked);
     this.closePath();
     this.stroke();
 }

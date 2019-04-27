@@ -62,12 +62,13 @@ scroll-bar{
 
 <script src="./Editor.js"></script>
 <script src="./Vec.js"></script>
+<script src="./Geom.js"></script>
 <script src="./CanvasExtend.js"></script>
 <script src="./ArrayExtend.js"></script>
-<script src="./Geom.js"></script>
+<script src="./Bound.js"></script>
 <script>
 
-    let sketch = new Bound([new Vec(0.49, 0.49), new Vec(-0.49, 0.49), new Vec(-0.49, -0.49), new Vec(0.49, -0.49)]);
+    let sketch = new Bound([new Vec(0.79, 0.79), new Vec(-0.79, 0.79), new Vec(-0.79, -0.79), new Vec(0.79, -0.79)]);
 
     let submitFunc = function(text) {
 
@@ -102,7 +103,7 @@ scroll-bar{
     let editorElement = document.getElementById('editor');
     // let editor = new Editor(editorElement, submitFunc);
     
-    sketch.addStroke({angle: 0, curv: 0.5})
+    sketch.addStroke({angle: 0, curv: 0.2}, {splitting: true})
     console.log(sketch);
     sketch.draw(ctx);
 
