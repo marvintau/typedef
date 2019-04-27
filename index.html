@@ -62,162 +62,12 @@ scroll-bar{
 
 <script src="./Editor.js"></script>
 <script src="./Vec.js"></script>
+<script src="./CanvasExtend.js"></script>
+<script src="./ArrayExtend.js"></script>
 <script src="./Geom.js"></script>
 <script>
 
-    let sketch = [{type:"bounding", bounding:[new Vec(0.5, 0.5), new Vec(-0.5, 0.5), new Vec(-0.5, -0.5), new Vec(0.5, -0.5)]}];
-
-    Array.prototype.last = function(){
-        return this[this.length - 1];
-    }
-
-    CanvasRenderingContext2D.prototype.lineToVec = function(vec){
-        this.lineTo(vec.x, vec.y);
-    }
-
-    CanvasRenderingContext2D.prototype.moveToVec = function(vec){
-        this.moveTo(vec.x, vec.y);
-    }
-
-    CanvasRenderingContext2D.prototype.bezierCurveTo = function(cv1, cv2, ev){
-        this.bezierCurveTo(cv1.x, cv1.y, cv2.x, cv2.y, ev.x, ev.y);
-    }
-
-    CanvasRenderingContext2D.prototype.drawZig = function(vecs){
-        try {
-            let [first, ...rest] = vecs;
-            console.log(first.mult(canvas.height/2*dpr));
-            this.moveToVec(first.mult(canvas.height/2*dpr));
-            for (let vec of rest){
-                this.lineToVec(vec.mult(canvas.height/2*dpr));
-            }
-        } catch {
-            console.log('Illegal line segs: ', vecs);
-        }
-    }
-
-    CanvasRenderingContext2D.prototype.draw = function(){
-
-        this.beginPath();
-        for (let element of sketch){
-            if(element.type === 'bounding')
-            this.drawZig(element.bounding);
-        }
-        this.closePath();
-        this.stroke();
-
-        // this.beginPath();
-        // for (let element of sketch){
-        //     if(element.type === 'path')
-        //     this.drawZig(element.path);
-        // }
-        // this.stroke();
-    }
-
-    let tokenExec = function(tokens){
-
-        for (;tokens.length > 0;){
-            if (!(tokens[0] in instrs)) {
-                tokens.splice(0, 1); continue;
-            };
-            let args = instrs[tokens[0]].args,
-                expr = args === "*" ? 
-                       tokens.splice(0) :
-                       tokens.splice(0, args);
-            let [name, ...params] = expr;
-                instrs[name].func(...params);
-        }
-            
-    }
-
-    let state = {
-        path : {default: [new Vec(0,0)]},
-        angle : {default: 0}
-    }
-
-    let gets = (key) => {
-        return state[key].curr;
-    }
-
-    let sets = (key, val) => {
-        state[key].curr = val;
-        return true;
-    }
-
-    let resets = (key) => {
-        if(Array.isArray(state[key].default))
-            state[key].curr = state[key].default.map(e => e.copy());
-        else if (typeof state[key].default === 'object')
-            state[key].curr = state[key].default.copy();
-        else
-            state[key].curr = state[key].default;
-    }
-
-    let adds = (key, defaultValue) => {
-        state[key] = {curr: undefined, default: defaultValue}
-    }
-
-    let inits = () => {
-        for (let key in state){
-            resets(key);
-        }
-    }
-
-
-    let instrs = {
-
-        end:{
-            args: 1,
-            func(name){
-                sketch.push({type:'path', path: gets('path')});
-                resets('path');
-            }
-        },
-
-        ang: {
-            args: 2,
-            func(angle){
-                sets('angle', parseFloat(angle));
-            }
-        },
-
-        len: {
-            args: 2,
-            func(length){
-                console.log(state);
-                let newVec = (new Vec(gets('angle'))).mult(length).add(gets('path').last());
-                gets('path').push(newVec);
-                resets('angle');
-            }
-        },
-
-        def: {
-            args: '*',
-            func(...args){
-                let [name, argc, ...rest] = args;
-                
-                let argv = rest.splice(0, parseInt(argc));
-
-                for (let arg of argv) if (arg in instrs)
-                    throw Error(`arg name [${arg}] shouldn't be same as reserved keyword`);
-                
-                let theArgMappingTable = argv.map(arg => rest.indexOf(arg));
-
-                instrs[name] = {
-                    args: parseInt(argc)+1,
-                    func: (function(argMappingTable, tokens){
-                        return function(...funcArgs){
-                            for (let i = 0; i < funcArgs.length; i++){
-                                tokens[argMappingTable[i]] = funcArgs[i];
-                            }
-                            console.log(tokens)
-                            tokenExec(tokens.slice());
-                        }
-                    })(theArgMappingTable, rest)
-                };
-            }
-        }
-    }
+    let sketch = new Bound([new Vec(0.49, 0.49), new Vec(-0.49, 0.49), new Vec(-0.49, -0.49), new Vec(0.49, -0.49)]);
 
     let submitFunc = function(text) {
 
@@ -235,7 +85,7 @@ scroll-bar{
         ctx.clearRect(0, 0, dpr*ctx.canvas.width, dpr*ctx.canvas.height);
         ctx.restore();
 
-        ctx.draw();
+        // ctx.draw();
     }
 
     let canvas = document.createElement('canvas'),
@@ -250,9 +100,11 @@ scroll-bar{
     ctx.scale(dpr, dpr);
 
     let editorElement = document.getElementById('editor');
-    let editor = new Editor(editorElement, submitFunc);
+    // let editor = new Editor(editorElement, submitFunc);
     
-    inits();
+    sketch.addStroke({angle: 0, curv: 0.5})
+    console.log(sketch);
+    sketch.draw(ctx);
 
 </script>
 <pre style="width: 400px; white-space: pre-wrap; margin:20px; font-family:'TheSansMono Office';">

@@ -1,8 +1,4 @@
 
-Array.prototype.sum = function(){
-    return this.reduce((acc, n) => acc + n, 0);
-}
-
 function toSegs(vecList){
     let most = vecList.slice(0, -1),
         rest = vecList.slice(1);
@@ -77,7 +73,23 @@ function segCross(seg1, seg2){
     return segVecCross(seg1[0], seg1[1], seg2[0], seg2[1]);
 }
 
-function lineSplitPoly(lineList, polyList){
+function diameter(angle, polyList){
+
+    let centroid = toPolyCentroid(polyList),
+        testVec = centroid.add(new Vec(angle)),
+        polySegs = toSegs(polyList.concat(polyList[0].copy()));
+    
+    let resSeg = [];
+    for (let seg of polySegs) {
+        let {u, p} = segCross([centroid, testVec], seg);
+        if(u > 0 && u < 1){
+            resSeg.push(p);
+        }
+    }
+
+    return resSeg[0].sub(resSeg[1]).mag();
+}
+function splitPoly(lineList, polyList){
     
     let actualPolyList = polyList.concat(polyList[0].copy()),
         lineSegs = toSegs(lineList),
@@ -138,4 +150,61 @@ function lineSplitPoly(lineList, polyList){
         right = actualPolyList.slice(1, enter+1).concat(intersection.reverse()).concat(actualPolyList.slice(leave));
 
     return {left, right};
+}
+
+function fromStrokeSpec(len, angle, curv=0, shape=0){
+    let s = [new Vec(1/2, 0), new Vec(1/6, 0), new Vec(-1/6, 0), new Vec(-1/2, 0)];
+    
+    s[1].x += shape*(1/3)+1/6;
+    s[2].x -= shape*(1/3)+1/6;
+
+    console.log(curv);
+    console.log(s[0]);
+    s[1].iadd((new Vec(0, 1/3)).mult(curv));
+    s[2].iadd((new Vec(0, 1/3)).mult(curv));
+    console.log(s[0]);
+    for (let p of s) {
+        p.imult(len);
+        p.irotate(angle);
+    }
+
+    return s;
+}
+
+class Bound {
+    constructor(bound){
+        this.bound = bound;
+        this.centroid = toPolyCentroid(bound);
+        this.strokes = [];
+        this.children = [];
+    }
+
+    addStroke({angle, curv, shape}, attr){
+        let len = diameter(angle, this.bound) * 0.9,
+            stroke = fromStrokeSpec(len, angle, curv, shape);
+        this.strokes.push(stroke);
+
+        if (attr.splitting) {
+            if(this.children.length === 0){
+                let {left, right} = splitPoly(stroke, this.bound);
+                this.children.push(new Bound(left), new Bound(right));
+            } else {
+                let newChildren = [];
+                while(this.children.length > 0 ) {
+                    let {left, right} = splitPoly(stroke, this.children.pop());
+                    this.children
+                }
+            }
+        }
+    }
+
+    draw(ctx){
+        ctx.drawBounding(this.bound);
+        for (let stroke of this.strokes){
+            ctx.drawStroke(stroke);
+        }
+        for (let child of this.children){
+            child.draw(ctx);
+        }
+    }
 }
