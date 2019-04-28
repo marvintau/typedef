@@ -12,39 +12,54 @@ CanvasRenderingContext2D.prototype.bezierCurveTo = function(cv1, cv2, ev){
 
 
 CanvasRenderingContext2D.prototype.point = function(v){
+
+    let dpr = window.devicePixelRatio,
+        ratio = this.canvas.height/2/dpr;
+
     this.beginPath()
-    this.arc(v.x, v.y, 10, 0, Math.PI*2);
+    this.arc(v.x*ratio, v.y*ratio, 3, 0, Math.PI*2);
     this.stroke();
 }
 
 CanvasRenderingContext2D.prototype.drawZig = function(vecs){
 
-    let dpr = window.devicePixelRatio;
+    let dpr = window.devicePixelRatio,
+        ratio = this.canvas.height/2/dpr;
 
     try {
         let [first, ...rest] = vecs;
-        this.moveToVec(first.mult(this.canvas.height/2));
+        this.moveToVec(first.mult(ratio));
         for (let vec of rest){
-            // console.log(vec.mult(this.canvas.height/2));
-            this.lineToVec(vec.mult(this.canvas.height/2));
+            this.lineToVec(vec.mult(ratio));
         }
     } catch {
         console.log('Illegal line segs: ', vecs);
     }
 }
 
-CanvasRenderingContext2D.prototype.drawBound = function(vecs){
+CanvasRenderingContext2D.prototype.text = function(text, vec){
 
-    let shrinked = polyShrinkByLength(vecs, 0.1);
+    let dpr = window.devicePixelRatio,
+        ratio = this.canvas.height/2/dpr;
+
+    this.fillText(text, vec.x*ratio, vec.y*ratio);
+
+}
+
+CanvasRenderingContext2D.prototype.drawBound = function(vecs, num){
 
     let centroid = toPolyCentroid(vecs);
-    this.point(centroid.mult(this.canvas.height/2));
+    if (num !== undefined){
+        this.text(num, centroid);
+    } else {
+        this.point(centroid);
+    }
 
-    this.strokeStyle = 'gray';
+    this.fillStyle = 'rgb(0, 0, 0, 0.1)';
     this.beginPath();
-    this.drawZig(shrinked);
+    this.drawZig(vecs);
     this.closePath();
-    this.stroke();
+    this.fill();
 }
 
 CanvasRenderingContext2D.prototype.drawStroke = function(vecs){

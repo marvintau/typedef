@@ -68,7 +68,7 @@ scroll-bar{
 <script src="./Bound.js"></script>
 <script>
 
-    let sketch = new Bound([new Vec(0.79, 0.79), new Vec(-0.79, 0.79), new Vec(-0.79, -0.79), new Vec(0.79, -0.79)]);
+    let sketch = new Bound([new Vec(0.89, 0.89), new Vec(-0.89, 0.89), new Vec(-0.89, -0.89), new Vec(0.89, -0.89)]);
 
     let submitFunc = function(text) {
 
@@ -103,17 +103,25 @@ scroll-bar{
     let editorElement = document.getElementById('editor');
     // let editor = new Editor(editorElement, submitFunc);
     
-    sketch.addStroke({angle: 0, curv: 0.2}, {splitting: true})
+    sketch.addStroke({angle:  0, curv:  0.05, shape: 0.35, shapeType: -1}, {splitting: true})
+    sketch.addStroke({angle: 90, curv: -0.05, shape: 0.35, shapeType: 1}, {splitting: true})
     console.log(sketch);
+    sketch.getChildByPath([3]).addStroke({angle: 45, curv: -0.2, ratio:0.5}, {splitting: true});
     sketch.draw(ctx);
 
 </script>
 <pre style="width: 400px; white-space: pre-wrap; margin:20px; font-family:'TheSansMono Office';">
 接下来：
 
-1. 设计path切分bounding的方法，使得path并不需要指明其长度，而能够放进bounding并切分它
+1. 添加同一级bound中stroke的拓扑关系
+   <b>相交（包括多次相交）</b>
+   
+   相接
+   平行
 
-2. 重新设计sketch的数据结构
+2. 将现有的添加笔画的方法整合到前端的interpreter中
+
+3. 设计一个梯度下降的方法，找到笔画及空白之间的平衡
 </pre>
 </html>
 

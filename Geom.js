@@ -38,7 +38,7 @@ function polyShrinkByLength(vecList, len){
     let shrinked = [];
     for (let vec of vecList) {
         let mag = vec.sub(polyCentroid).mag();
-        shrinked.push(vec.mult((mag - len) / mag));
+        shrinked.push(vec.sub(polyCentroid).mult((mag - len) / mag).add(polyCentroid));
     }
 
     return shrinked;
@@ -152,17 +152,15 @@ function splitPoly(lineList, polyList){
     return {left, right};
 }
 
-function fromStrokeSpec(len, angle, curv=0, shape=0){
+function fromStrokeSpec(len, angle, curv=0, shape=0, shapeType=1){
     let s = [new Vec(1/2, 0), new Vec(1/6, 0), new Vec(-1/6, 0), new Vec(-1/2, 0)];
     
     s[1].x += shape*(1/3)+1/6;
     s[2].x -= shape*(1/3)+1/6;
 
-    console.log(curv);
-    console.log(s[0]);
-    s[1].iadd((new Vec(0, 1/3)).mult(curv));
+    s[1].iadd((new Vec(0, shapeType * 1/3)).mult(curv));
     s[2].iadd((new Vec(0, 1/3)).mult(curv));
-    console.log(s[0]);
+
     for (let p of s) {
         p.imult(len);
         p.irotate(angle);
