@@ -151,20 +151,3 @@ function splitPoly(lineList, polyList){
 
     return {left, right};
 }
-
-function fromStrokeSpec(len, angle, curv=0, shape=0, shapeType=1){
-    let s = [new Vec(1/2, 0), new Vec(1/6, 0), new Vec(-1/6, 0), new Vec(-1/2, 0)];
-    
-    s[1].x += shape*(1/3)+1/6;
-    s[2].x -= shape*(1/3)+1/6;
-
-    s[1].iadd((new Vec(0, shapeType * 1/3)).mult(curv));
-    s[2].iadd((new Vec(0, 1/3)).mult(curv));
-
-    for (let p of s) {
-        p.imult(len);
-        p.irotate(angle);
-    }
-
-    return s;
-}

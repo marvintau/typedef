@@ -6,15 +6,14 @@ class Bound {
         this.children = [];
     }
 
-    addStroke({angle, curv, ratio=0.9, shape, shapeType}, attr={}){
-        let centroid = toPolyCentroid(this.bound),
-            len = diameter(angle, this.bound) * ratio,
-            stroke = fromStrokeSpec(len, angle, curv, shape, shapeType);
-        
-        for (let vec of stroke){
-            vec.iadd(centroid);
-        }
+    addStroke(strokeSpec, attr={}){
 
+        console.log(strokeSpec);
+
+        let centroid = toPolyCentroid(this.bound),
+            len = diameter(strokeSpec.angle, this.bound),
+            stroke = strokeSpec.toStroke(centroid, len);
+        
         this.strokes.push(stroke);
 
         if (attr.splitting) {
