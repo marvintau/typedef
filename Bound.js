@@ -8,10 +8,8 @@ class Bound {
 
     addStroke(strokeSpec, attr={}){
 
-        console.log(strokeSpec);
-
         let centroid = toPolyCentroid(this.bound),
-            len = diameter(strokeSpec.angle, this.bound),
+            len = Math.sqrt(toPolyArea(toSegs(closePath(this.bound)))),
             stroke = strokeSpec.toStroke(centroid, len);
         
         this.strokes.push(stroke);

@@ -11,6 +11,10 @@ function toSegs(vecList){
     return segs;
 }
 
+function closePath(vecList){
+    return vecList.concat(vecList[0].copy());
+}
+
 function toPolyArea(polySegs){
     return polySegs.map(seg => seg[0].cross(seg[1])).sum()/2;
 }
@@ -23,6 +27,9 @@ function toPolyCentroid(vecList){
         crosses = polySegs.map(seg => seg[0].cross(seg[1]));
     
     let centroid = new Vec(0, 0);
+    // console.log(vecList,  xPairSums, yPairSums, crosses, polyArea);
+    // console.log('polyArea', polyArea);
+    polyArea = polyArea === 0 ? 1 : polyArea;
     while(xPairSums.length > 0){
         let cross = crosses.pop();
         centroid.x += xPairSums.pop() * cross / (6 * polyArea);

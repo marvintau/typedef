@@ -1,5 +1,5 @@
 
-function toFragStroke(frag, len){
+function toFragStroke(frag){
     let s = [new Vec(1/2, 0), new Vec(1/6, 0), new Vec(-1/6, 0), new Vec(-1/2, 0)];
     
     s[1].x += frag.shape*(1/3)+1/6;
@@ -9,7 +9,7 @@ function toFragStroke(frag, len){
     s[2].iadd((new Vec(0, 1/3)).mult(frag.curv));
 
     for (let p of s) {
-        p.imult(len * frag.ratio);
+        p.imult(frag.ratio);
         p.irotate(frag.angle);
     }
 
@@ -38,24 +38,28 @@ class StrokeSpec {
 
     }
 
-    toStroke(len){
+    toStroke(boundCentroid, len){
         let s = [];
         let [first, ...rest] = this.frags;
 
-        s.push(...toFragStroke(first));
+        s = s.concat(toFragStroke(first));
+
         for (let frag of rest) {
             let fragStroke = toFragStroke(frag);
             for (let vec of fragStroke){
                 vec.iadd(s.last());
-                s.push(...fragStroke);
+                s = s.concat(fragStroke);
             }
         }
 
-        let sCentroid = toPolyCentroid(s);
+        let trans = toPolyCentroid(s).sub(boundCentroid);
+
         for (let vec of s){
-            vec.isub(sCentroid);
+            vec.isub(trans);
             vec.imult(len);
         }
+
+        return s;
     }
     
 }

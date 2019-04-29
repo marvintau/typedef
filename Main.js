@@ -49,9 +49,9 @@ let strokes = [];
 
     console.log(strokes);
 
-    console.log(getStroke('heng').toStroke(0.5))
+    // console.log(getStroke('heng').toStroke(0.5))
 
-    // sketch.addStroke(getStroke('heng'), {splitting: true})
+    sketch.addStroke(getStroke('heng'), {splitting: true})
     // sketch.addStroke(getStroke('shu'), {splitting: true})
     // sketch.getChildByPath([3]).addStroke(getStroke('dian'), {splitting: true});
 
