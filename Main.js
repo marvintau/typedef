@@ -43,16 +43,17 @@ let strokes = [];
     let editorElement = document.getElementById('editor');
     // let editor = new Editor(editorElement, submitFunc);
     
-    addStroke('heng', new StrokeSpec({curv:  0.05, shape: 0.35, twist: -1}));
-    addStroke('shu',  new StrokeSpec({angle: 90, curv: -0.05, shape: 0.35, twist: 1}));
+    addStroke('heng', new StrokeSpec({angle: 180, curv:  0.05, shape: 0.35, twist: -1}));
+    addStroke('shu',  new StrokeSpec({angle: -90, curv: 0.05, shape: 0.35, twist: 1}));
     addStroke('dian', new StrokeSpec({angle: 45, curv: -0.2, ratio:0.5}));
 
-    console.log(strokes);
+    addStroke('hengzhe', new StrokeSpec(getStroke('heng').toSpec()));
+    getStroke('hengzhe').addFrag(getStroke('shu').toSpec());
 
-    // console.log(getStroke('heng').toStroke(0.5))
+    console.log(getStroke('hengzhe').toStroke(0.5))
 
-    sketch.addStroke(getStroke('heng'), {splitting: true})
+    sketch.addStroke(getStroke('hengzhe'), {splitting: true})
     // sketch.addStroke(getStroke('shu'), {splitting: true})
-    // sketch.getChildByPath([3]).addStroke(getStroke('dian'), {splitting: true});
+    sketch.getChildByPath([0]).addStroke(getStroke('dian'), {splitting: true});
 
     sketch.draw(ctx);

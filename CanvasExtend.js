@@ -29,7 +29,7 @@ CanvasRenderingContext2D.prototype.drawZig = function(vecs){
     try {
         let [first, ...rest] = vecs;
         this.moveToVec(first.mult(ratio));
-        for (let vec of rest){
+        for (let [index, vec] of rest.entries()){
             this.lineToVec(vec.mult(ratio));
         }
     } catch {
@@ -67,4 +67,12 @@ CanvasRenderingContext2D.prototype.drawStroke = function(vecs){
     this.beginPath();
     this.drawZig(vecs);
     this.stroke();
+
+    this.save();
+    this.fillStyle = "black";
+    for (let [index, vec] of vecs.entries()){
+        this.text(index, vec);
+    }
+    this.restore();
+
 }

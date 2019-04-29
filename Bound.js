@@ -1,3 +1,6 @@
+
+var BOUND_OFFSET = 0.04;
+
 class Bound {
     constructor(bound){
         this.bound = bound;
@@ -10,7 +13,7 @@ class Bound {
 
         let centroid = toPolyCentroid(this.bound),
             len = Math.sqrt(toPolyArea(toSegs(closePath(this.bound)))),
-            stroke = strokeSpec.toStroke(centroid, len);
+            stroke = strokeSpec.toStroke(centroid);
         
         this.strokes.push(stroke);
 
@@ -18,14 +21,14 @@ class Bound {
             if(this.children.length === 0){
                 let {left, right} = splitPoly(stroke, this.bound);
                 
-                this.children.push(new Bound(polyShrinkByLength(left, 0.01)));
-                this.children.push(new Bound(polyShrinkByLength(right, 0.01)));
+                this.children.push(new Bound(polyShrinkByLength(left,  BOUND_OFFSET)));
+                this.children.push(new Bound(polyShrinkByLength(right, BOUND_OFFSET)));
             } else {
                 let newChildren = [];
                 while(this.children.length > 0 ) {
                     let {left, right} = splitPoly(stroke, this.children.splice(0, 1)[0].bound);
-                    newChildren.push(new Bound(polyShrinkByLength(left, 0.01)));
-                    newChildren.push(new Bound(polyShrinkByLength(right, 0.01)));
+                    newChildren.push(new Bound(polyShrinkByLength(left,  BOUND_OFFSET)));
+                    newChildren.push(new Bound(polyShrinkByLength(right, BOUND_OFFSET)));
                 }
                 this.children = newChildren;
             }

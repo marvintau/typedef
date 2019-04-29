@@ -38,25 +38,36 @@ class StrokeSpec {
 
     }
 
-    toStroke(boundCentroid, len){
+    toSpec(){
+        if(this.frags.length === 1){
+            return Object.assign({}, this.frags[0]);
+        } else {
+            return this.frags.map(f => Object.assign({}, f));
+        }
+    }
+
+    toStroke(boundCentroid){
         let s = [];
         let [first, ...rest] = this.frags;
 
         s = s.concat(toFragStroke(first));
 
         for (let frag of rest) {
-            let fragStroke = toFragStroke(frag);
-            for (let vec of fragStroke){
-                vec.iadd(s.last());
-                s = s.concat(fragStroke);
-            }
+            let [fragFirst, ...fragRest] = toFragStroke(frag);
+
+            fragRest.forEach(v => v.isub(fragFirst.sub(s.last())));
+            s = s.concat(fragRest);
+        }
+
+        if (boundCentroid === undefined){
+            boundCentroid = new Vec(0, 0);
         }
 
         let trans = toPolyCentroid(s).sub(boundCentroid);
 
         for (let vec of s){
             vec.isub(trans);
-            vec.imult(len);
+            // vec.imult(len);
         }
 
         return s;
