@@ -70,7 +70,7 @@ class StrokeSpec {
             // vec.imult(len);
         }
 
-        return s;
+        return new Stroke(s);
     }
     
 }

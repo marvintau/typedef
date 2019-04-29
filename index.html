@@ -60,10 +60,12 @@ scroll-bar{
 
 </body>
 
+<script src="./Vec.js"></script>
+
 <script src="./StrokeSpec.js"></script>
+<script src="./Stroke.js"></script>
 
 <script src="./Editor.js"></script>
-<script src="./Vec.js"></script>
 <script src="./Geom.js"></script>
 <script src="./CanvasExtend.js"></script>
 <script src="./ArrayExtend.js"></script>
@@ -71,21 +73,9 @@ scroll-bar{
 <script src="./Main.js"></script>
 <pre style="width: 400px; white-space: pre-wrap; margin:20px; font-family:'TheSansMono Office';">
 <h1>笔画结构原理</h1>
-我们找到一种表述笔画结构的拓扑关系。通过设置一系列默认值和范围，能够给出一个依据一种描述语言，形成一个可以被人类识别的汉字的方法。然后在这个方法的基础上，再依据所暴露出来并且能够修改的参数，依据一定的约束条件对汉字结构进行优化。
 
-1. 添加同一级bound中stroke的拓扑关系
-   <b>相交（包括多次相交）</b>
-   当两笔画相交时，我们认为应当遵守以下原则
-   a. 笔画相交有可能会有多个约束关系
-   b. 笔画的位置可以自由移动，但是其它的参数（形状、角度等）
-      必须指明范围（当然这个范围应该是在笔画的spec里面）
-   
-   相接
-   平行
 
-2. 将现有的添加笔画的方法整合到前端的interpreter中
 
-3. 设计一个梯度下降的方法，找到笔画及空白之间的平衡
 </pre>
 </html>
 

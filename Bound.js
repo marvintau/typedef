@@ -19,14 +19,14 @@ class Bound {
 
         if (attr.splitting) {
             if(this.children.length === 0){
-                let {left, right} = splitPoly(stroke, this.bound);
+                let {left, right} = stroke.splitBound(this.bound);
                 
                 this.children.push(new Bound(polyShrinkByLength(left,  BOUND_OFFSET)));
                 this.children.push(new Bound(polyShrinkByLength(right, BOUND_OFFSET)));
             } else {
                 let newChildren = [];
                 while(this.children.length > 0 ) {
-                    let {left, right} = splitPoly(stroke, this.children.splice(0, 1)[0].bound);
+                    let {left, right} = stroke.splitBound(this.children.splice(0, 1)[0].bound);
                     newChildren.push(new Bound(polyShrinkByLength(left,  BOUND_OFFSET)));
                     newChildren.push(new Bound(polyShrinkByLength(right, BOUND_OFFSET)));
                 }
@@ -46,7 +46,7 @@ class Bound {
     draw(ctx, num){
         ctx.drawBound(this.bound, num);
         for (let stroke of this.strokes){
-            ctx.drawStroke(stroke);
+            stroke.draw(ctx);
         }
         for (let [index, child] of this.children.entries()){
             let label = num ? `${num}-${index}` : `${index}`;

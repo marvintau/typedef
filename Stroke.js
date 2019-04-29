@@ -1,0 +1,101 @@
+class Stroke {
+    constructor(vecList){
+        this.vecs = vecList;
+    }
+
+    trans(transVec){
+        for (let vec of this.vecs){
+            vec.iadd(transVec);
+        }
+    }
+
+    pointAt(ratio){
+        let segs = toSegs(this.vecs),
+            lens = segLengths(segs),
+            accum = lens.reduce((acc, x) => acc.concat(acc.last() + x), [0]),
+            total = accum.last(),
+            given = total * ratio;
+
+        var ithSeg, lenInSeg;
+        for (let [index, len] of accum.entries()){
+            if (given < len) {
+                ithSeg = index - 1;
+                lenInSeg = len - given;
+                break;
+            }
+        }
+        let [hd, tl] = segs[ithSeg];
+
+        return tl.add(hd.sub(tl).mult(lenInSeg/lens[ithSeg]));
+    }
+
+    splitBound(polyList){
+    
+        let actualPolyList = polyList.concat(polyList[0].copy()),
+            lineSegs = toSegs(this.vecs),
+            polySegs = toSegs(actualPolyList);
+        
+        let enter, leave,
+            intersection = [];
+    
+        // var seg;
+        // while (lineSegs.length > 0){
+            // seg = lineSegs.splice(0, 1)[0];
+        for (let [segIndex, seg] of lineSegs.entries()){
+            // 1. After handling the first intersection, and there are remaining
+            //    segs, we put the first one;
+            if(enter !== undefined){
+                intersection.push(seg[0]);
+            }
+            // 2. Handles if the rest segments of line crosses the edge of
+            //    the polygon. If the entering index is not marked, then 
+            //    marked, or mark the leaving index;
+            for (let [index, edge] of polySegs.entries()){
+                let {t, u, p} = segCross(seg, edge);
+    
+                if(u > 0 && u < 1 && (segIndex === 0 || t > 0) && (segIndex == lineSegs.length - 1 || (t < 1))){
+                    if(enter === undefined){
+                        intersection.push(p);
+                        enter = index;
+                    } else if (leave === undefined){
+                        intersection.push(p);
+                        leave = index;
+                        break;
+                    }
+                }
+            }
+    
+            // 3. if both the entering and leaving are marked, then break the
+            //    loop and exit.
+            if((enter !== undefined) && (leave !== undefined)){
+                break;
+            }
+    
+        }
+    
+        if (enter < leave) {
+            intersection.reverse();
+        } else {
+            [enter, leave] = [leave, enter];
+        }
+    
+        let left  = actualPolyList.slice(enter+1, leave + 1).concat(intersection.map(e=>e.copy())),
+            right = actualPolyList.slice(1, enter+1).concat(intersection.reverse()).concat(actualPolyList.slice(leave+1));
+    
+        return {left, right};
+    }
+
+    draw(ctx){
+        ctx.strokeStyle = 'black';
+        ctx.beginPath();
+        ctx.drawZig(this.vecs);
+        ctx.stroke();
+    
+        ctx.save();
+        ctx.fillStyle = "black";
+        for (let [index, vec] of this.vecs.entries()){
+            ctx.text(index, vec);
+        }
+        ctx.restore();
+    }
+}

@@ -11,6 +11,10 @@ function toSegs(vecList){
     return segs;
 }
 
+function segLengths(segs){
+    return segs.map(([hd, tl]) => tl.sub(hd).mag());
+}
+
 function closePath(vecList){
     return vecList.concat(vecList[0].copy());
 }
@@ -95,66 +99,4 @@ function diameter(angle, polyList){
     }
 
     return resSeg[0].sub(resSeg[1]).mag();
-}
-function splitPoly(lineList, polyList){
-    
-    let actualPolyList = polyList.concat(polyList[0].copy()),
-        lineSegs = toSegs(lineList),
-        polySegs = toSegs(actualPolyList);
-    
-    let enter,
-        leave,
-        intersection = [];
-
-    var seg;
-    while (lineSegs.length > 0){
-        seg = lineSegs.splice(0, 1)[0];
-
-        // 1. After handling the first intersection, and there are remaining
-        //    segs, we put the first one;
-        if(enter !== undefined){
-            intersection.push(seg[0]);
-        }
-        // 2. Handles if the rest segments of line crosses the edge of
-        //    the polygon. If the entering index is not marked, then 
-        //    marked, or mark the leaving index;
-        for (let [index, edge] of polySegs.entries()){
-            let {t, u, p} = segCross(seg, edge);
-
-            // for the first and last segment, we don't need it strictly
-            // intersect with polygon edge, but merely get the off-segment
-            // intersection.
-            let isFirst = lineSegs.length === lineList.length - 2,
-                isLast = lineSegs.length === 0;
-            
-            if(u > 0 && u < 1 && (isFirst || t > 0) && (isLast || (t < 1))){
-                if(enter === undefined){
-                    intersection.push(p);
-                    enter = index;
-                } else if (leave === undefined){
-                    intersection.push(p);
-                    leave = index;
-                    break;
-                }
-            }
-        }
-
-        // 3. if both the entering and leaving are marked, then break the
-        //    loop and exit.
-        if((enter !== undefined) && (leave !== undefined)){
-            break;
-        }
-
-    }
-
-    if (enter < leave) {
-        intersection.reverse();
-    } else {
-        [enter, leave] = [leave, enter];
-    }
-
-    let left  = actualPolyList.slice(enter+1, leave + 1).concat(intersection.map(e=>e.copy())),
-        right = actualPolyList.slice(1, enter+1).concat(intersection.reverse()).concat(actualPolyList.slice(leave+1));
-
-    return {left, right};
 }

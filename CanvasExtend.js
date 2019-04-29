@@ -50,7 +50,10 @@ CanvasRenderingContext2D.prototype.drawBound = function(vecs, num){
 
     let centroid = toPolyCentroid(vecs);
     if (num !== undefined){
+        this.save();
+        this.fillStyle = 'rgb(128, 0, 0, 0.3)';
         this.text(num, centroid);
+        this.restore();
     } else {
         this.point(centroid);
     }
@@ -60,19 +63,4 @@ CanvasRenderingContext2D.prototype.drawBound = function(vecs, num){
     this.drawZig(vecs);
     this.closePath();
     this.fill();
-}
-
-CanvasRenderingContext2D.prototype.drawStroke = function(vecs){
-    this.strokeStyle = 'black';
-    this.beginPath();
-    this.drawZig(vecs);
-    this.stroke();
-
-    this.save();
-    this.fillStyle = "black";
-    for (let [index, vec] of vecs.entries()){
-        this.text(index, vec);
-    }
-    this.restore();
-
 }
