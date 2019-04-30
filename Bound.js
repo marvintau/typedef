@@ -15,6 +15,14 @@ class Bound {
             len = Math.sqrt(toPolyArea(toSegs(closePath(this.bound)))),
             stroke = strokeSpec.toStroke(centroid);
         
+        if (attr.cross) {
+            let {at, by} = attr.cross;
+            let currPoint = stroke.pointAt(by),
+                lastPoint = this.strokes.last().pointAt(at);
+
+            stroke.trans(lastPoint.sub(currPoint));
+        }
+
         this.strokes.push(stroke);
 
         if (attr.splitting) {

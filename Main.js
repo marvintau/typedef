@@ -51,8 +51,10 @@ let strokes = [];
     getStroke('hengzhe').addFrag(getStroke('shu').toSpec());
 
     sketch.addStroke(getStroke('hengzhe'), {splitting: true})
+    sketch.addStroke(getStroke('shu'), {splitting: true, cross:{by:0.5, at:0.25}})
+
     // sketch.addStroke(getStroke('shu'), {splitting: true})
-    sketch.getChildByPath([0]).addStroke(getStroke('dian'), {splitting: true});
+    // sketch.getChildByPath([0]).addStroke(getStroke('dian'), {splitting: true});
 
     ctx.point(sketch.strokes[0].pointAt(0.25));
 
