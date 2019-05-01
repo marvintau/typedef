@@ -46,7 +46,7 @@ class StrokeSpec {
         }
     }
 
-    toStroke(boundCentroid){
+    toStroke(){
         let s = [];
         let [first, ...rest] = this.frags;
 
@@ -57,17 +57,6 @@ class StrokeSpec {
 
             fragRest.forEach(v => v.isub(fragFirst.sub(s.last())));
             s = s.concat(fragRest);
-        }
-
-        if (boundCentroid === undefined){
-            boundCentroid = new Vec(0, 0);
-        }
-
-        let trans = toPolyCentroid(s).sub(boundCentroid);
-
-        for (let vec of s){
-            vec.isub(trans);
-            // vec.imult(len);
         }
 
         return new Stroke(s);

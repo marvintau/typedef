@@ -50,11 +50,17 @@ let strokes = [];
     addStroke('hengzhe', new StrokeSpec(getStroke('heng').toSpec()));
     getStroke('hengzhe').addFrag(getStroke('shu').toSpec());
 
-    sketch.addStroke(getStroke('hengzhe'), {splitting: true})
-    sketch.addStroke(getStroke('shu'), {splitting: true, cross:{by:0.5, at:0.25}})
+    sketch.addStroke(getStroke('hengzhe'), {})
+    sketch.addStroke(getStroke('shu'), {cross:{by:0.5, at:0.25}})
+    sketch.splitByStroke();
 
     // sketch.addStroke(getStroke('shu'), {splitting: true})
     // sketch.getChildByPath([0]).addStroke(getStroke('dian'), {splitting: true});
+
+    // let points = sketch.strokes[0].sample(0.05);
+    // for (let point of points){
+    //     ctx.point(point);
+    // }
 
     ctx.point(sketch.strokes[0].pointAt(0.25));
 

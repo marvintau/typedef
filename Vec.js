@@ -215,4 +215,13 @@ class Vec{
     toArray(){
         return [this.x, this.y];
     }
+
+    draw(ctx){
+        ctx.save();
+
+        ctx.strokeStyle = 'gray';
+        ctx.point(this);
+    
+        ctx.restore();
+    }
 }

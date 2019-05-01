@@ -24,9 +24,16 @@ class Stroke {
                 break;
             }
         }
-        let [hd, tl] = segs[ithSeg];
+        return segs[ithSeg].lerp(1 - lenInSeg/lens[ithSeg]);
+    }
 
-        return tl.add(hd.sub(tl).mult(lenInSeg/lens[ithSeg]));
+    sample(res=0.05){
+        let samples = [];
+        let segs = toSegs(this.vecs);
+        for (let seg of segs){
+            samples.push(...seg.sample(res));
+        }
+        return samples;
     }
 
     splitBound(polyList){
@@ -45,13 +52,13 @@ class Stroke {
             // 1. After handling the first intersection, and there are remaining
             //    segs, we put the first one;
             if(enter !== undefined){
-                intersection.push(seg[0]);
+                intersection.push(seg.head);
             }
             // 2. Handles if the rest segments of line crosses the edge of
             //    the polygon. If the entering index is not marked, then 
             //    marked, or mark the leaving index;
             for (let [index, edge] of polySegs.entries()){
-                let {t, u, p} = segCross(seg, edge);
+                let {t, u, p} = seg.cross(edge);
     
                 if(u > 0 && u < 1 && (segIndex === 0 || t > 0) && (segIndex == lineSegs.length - 1 || (t < 1))){
                     if(enter === undefined){
@@ -96,6 +103,11 @@ class Stroke {
         for (let [index, vec] of this.vecs.entries()){
             ctx.text(index, vec);
         }
+
+        // for (let vec of this.sample()){
+        //     console.log(vec);
+        //     ctx.point(vec);
+        // }
         ctx.restore();
     }
 }

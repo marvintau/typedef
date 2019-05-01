@@ -5,14 +5,14 @@ function toSegs(vecList){
 
     let segs = [];
     while(most.length > 0){
-        segs.push([most.pop(), rest.pop()]);
+        segs.push(new Seg(most.pop(), rest.pop()));
     }
     segs.reverse();
     return segs;
 }
 
 function segLengths(segs){
-    return segs.map(([hd, tl]) => tl.sub(hd).mag());
+    return segs.map((seg) => seg.len());
 }
 
 function closePath(vecList){
@@ -20,15 +20,15 @@ function closePath(vecList){
 }
 
 function toPolyArea(polySegs){
-    return polySegs.map(seg => seg[0].cross(seg[1])).sum()/2;
+    return polySegs.map(seg => seg.incross()).sum()/2;
 }
 
 function toPolyCentroid(vecList){
     let polySegs = toSegs(vecList.concat(vecList[0].copy())),
         polyArea = toPolyArea(polySegs),
-        xPairSums = polySegs.map(seg => seg[0].x + seg[1].x),
-        yPairSums = polySegs.map(seg => seg[0].y + seg[1].y),
-        crosses = polySegs.map(seg => seg[0].cross(seg[1]));
+        xPairSums = polySegs.map(seg => seg.head.x + seg.tail.x),
+        yPairSums = polySegs.map(seg => seg.head.y + seg.tail.y),
+        crosses = polySegs.map(seg => seg.incross());
     
     let centroid = new Vec(0, 0);
     // console.log(vecList,  xPairSums, yPairSums, crosses, polyArea);
@@ -41,47 +41,6 @@ function toPolyCentroid(vecList){
     }
     
     return centroid;
-}
-
-function polyShrinkByLength(vecList, len){
-    let polyCentroid = toPolyCentroid(vecList);
-    
-    let shrinked = [];
-    for (let vec of vecList) {
-        let mag = vec.sub(polyCentroid).mag();
-        shrinked.push(vec.sub(polyCentroid).mult((mag - len) / mag).add(polyCentroid));
-    }
-
-    return shrinked;
-}
-
-// https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
-// 
-// note that:
-// |x1-x3 x3-x4|
-// |           | (determinant) is equivalent to
-// |y1-y3 y3-y4|
-// 
-// cross((x1-x3, y1-y3), (x3-x4, y3-y4)), or
-// 
-// cross(P1-P3, P3-P4)
-
-function segVecCross(head1, tail1, head2, tail2){
-    let h1h2 = head1.sub(head2),
-        h1t1 = head1.sub(tail1),
-        h2t2 = head2.sub(tail2),
-        detT = h1h2.cross(h2t2),
-        detU = h1t1.cross(h1h2),
-        detS = h1t1.cross(h2t2),
-        t = detT/detS,
-        u = -detU/detS,
-        p = head1.add(tail1.sub(head1).mult(t));
-    
-    return {t, u, p}
-}
-
-function segCross(seg1, seg2){
-    return segVecCross(seg1[0], seg1[1], seg2[0], seg2[1]);
 }
 
 function diameter(angle, polyList){
@@ -98,5 +57,5 @@ function diameter(angle, polyList){
         }
     }
 
-    return resSeg[0].sub(resSeg[1]).mag();
+    return resseg.head.sub(resseg.tail).mag();
 }
