@@ -24,23 +24,27 @@ function toPolyArea(polySegs){
 }
 
 function toPolyCentroid(vecList){
-    let polySegs = toSegs(vecList.concat(vecList[0].copy())),
-        polyArea = toPolyArea(polySegs),
-        xPairSums = polySegs.map(seg => seg.head.x + seg.tail.x),
-        yPairSums = polySegs.map(seg => seg.head.y + seg.tail.y),
-        crosses = polySegs.map(seg => seg.incross());
-    
-    let centroid = new Vec(0, 0);
-    // console.log(vecList,  xPairSums, yPairSums, crosses, polyArea);
-    // console.log('polyArea', polyArea);
-    polyArea = polyArea === 0 ? 1 : polyArea;
-    while(xPairSums.length > 0){
-        let cross = crosses.pop();
-        centroid.x += xPairSums.pop() * cross / (6 * polyArea);
-        centroid.y += yPairSums.pop() * cross / (6 * polyArea);
+    if (vecList.length > 0){
+        let polySegs = toSegs(vecList.concat(vecList[0].copy())),
+            polyArea = toPolyArea(polySegs),
+            xPairSums = polySegs.map(seg => seg.head.x + seg.tail.x),
+            yPairSums = polySegs.map(seg => seg.head.y + seg.tail.y),
+            crosses = polySegs.map(seg => seg.incross());
+        
+        let centroid = new Vec(0, 0);
+        // console.log(vecList,  xPairSums, yPairSums, crosses, polyArea);
+        // console.log('polyArea', polyArea);
+        polyArea = polyArea === 0 ? 1 : polyArea;
+        while(xPairSums.length > 0){
+            let cross = crosses.pop();
+            centroid.x += xPairSums.pop() * cross / (6 * polyArea);
+            centroid.y += yPairSums.pop() * cross / (6 * polyArea);
+        }
+        
+        return centroid;
+    } else {
+        return undefined;
     }
-    
-    return centroid;
 }
 
 function diameter(angle, polyList){

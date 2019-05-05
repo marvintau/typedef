@@ -1,10 +1,11 @@
 
 var BOUND_OFFSET = 0.02;
 
-class Bound {
+class Radical {
     constructor(bound){
         this.bound = bound;
         this.centroid = toPolyCentroid(bound);
+        this.specs = [];
         this.strokes = [];
         this.children = [];
     }
@@ -21,14 +22,28 @@ class Bound {
         }
     }
 
+    addStrokeSpec(strokeSpec){
+        this.specs.push(strokeSpec);
+    }
+
     addStroke(strokeSpec, attr={}){
+
+        if(attr.rotate) {
+            strokeSpec.rotate(attr.rotate);
+        }
+
+        if(attr.scale) {
+            strokeSpec.scale(attr.scale);
+        }
 
         let stroke = strokeSpec.toStroke();
         
         if (attr.cross) {
-            let {at, by} = attr.cross;
+            let {at, by, to} = attr.cross;
+            console.log("to", this.strokes[to]);
             let currPoint = stroke.pointAt(by),
-                lastPoint = this.strokes.last().pointAt(at);
+                theStroke = (to !== undefined) ? this.strokes[to] : this.strokes.last(),
+                lastPoint = theStroke.pointAt(at);
 
             stroke.trans(lastPoint.sub(currPoint));
         }
@@ -42,14 +57,14 @@ class Bound {
             if(this.children.length === 0){
                 let {left, right} = stroke.splitBound(this.bound);
                 
-                this.children.push(new Bound(left));
-                this.children.push(new Bound(right));
+                if(left.length > 0) this.children.push(new Radical(left));
+                if(right.length > 0) this.children.push(new Radical(right));
             } else {
                 let newChildren = [];
                 while(this.children.length > 0 ) {
                     let {left, right} = stroke.splitBound(this.children.splice(0, 1)[0].bound);
-                    newChildren.push(new Bound(left));
-                    newChildren.push(new Bound(right));
+                    if(left.length > 0) newChildren.push(new Radical(left));
+                    if(right.length > 0) newChildren.push(new Radical(right));
                 }
                 this.children = newChildren;
             }

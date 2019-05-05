@@ -9,6 +9,20 @@ class Stroke {
         }
     }
 
+    rotate(angle){
+        for (let i = 1; i < this.vecs.length; i++){
+            this.vecs[i].isub(this.vecs[0]);
+            this.vecs[i].irotate(angle);
+            this.vecs[i].iadd(this.vecs[0]);
+        }
+    }
+
+    scale(ratio){
+        this.vecs = toSegs(this.vecs)
+            .map(seg => seg.diff().mult(ratio))
+            .reduce((acc, val) => acc.concat(acc.last().add(val)), this.vecs[0]);
+    }
+
     pointAt(ratio){
         let segs = toSegs(this.vecs),
             lens = segLengths(segs),
@@ -16,7 +30,8 @@ class Stroke {
             total = accum.last(),
             given = total * ratio;
 
-        var ithSeg, lenInSeg;
+        var ithSeg = 0,
+            lenInSeg = 0;
         for (let [index, len] of accum.entries()){
             if (given < len) {
                 ithSeg = index - 1;
@@ -24,6 +39,8 @@ class Stroke {
                 break;
             }
         }
+        console.log(ithSeg);
+
         return segs[ithSeg].lerp(1 - lenInSeg/lens[ithSeg]);
     }
 

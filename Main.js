@@ -1,3 +1,6 @@
+var CROSS_END = 0.999999,
+    CROSS_SUCC = {by: 0, at: CROSS_END};
+
 let strokes = [];
 
     function addStroke(strokeName, strokeSpec){
@@ -5,10 +8,10 @@ let strokes = [];
     }
 
     function getStroke(strokeName){
-        return strokes[strokeName];
+        return strokes[strokeName].copy();
     }
 
-    let sketch = new Bound([new Vec(0.89, 0.89), new Vec(-0.89, 0.89), new Vec(-0.89, -0.89), new Vec(0.89, -0.89)]);
+    let sketch = new Radical([new Vec(0.89, 0.89), new Vec(-0.89, 0.89), new Vec(-0.89, -0.89), new Vec(0.89, -0.89)]);
 
     let submitFunc = function(text) {
 
@@ -44,14 +47,16 @@ let strokes = [];
     // let editor = new Editor(editorElement, submitFunc);
     
     addStroke('heng', new StrokeSpec({angle: 180, curv:  0.05, shape: 0.35, twist: -1}));
-    addStroke('shu',  new StrokeSpec({angle: -90, curv: 0.05, shape: 0.35, twist: 1}));
+    addStroke('shu',  new StrokeSpec({angle: -90, curv: 0.02, shape: 0.35, twist: 1}));
     addStroke('dian', new StrokeSpec({angle: 45, curv: -0.2, ratio:0.5}));
-
-    addStroke('hengzhe', new StrokeSpec(getStroke('heng').toSpec()));
-    getStroke('hengzhe').addFrag(getStroke('shu').toSpec());
-
-    sketch.addStroke(getStroke('hengzhe'), {})
-    sketch.addStroke(getStroke('shu'), {cross:{by:0.5, at:0.25}})
+    
+    sketch.addStroke(getStroke('heng'), {})
+    sketch.addStroke(getStroke('shu'), {cross : CROSS_SUCC})
+    sketch.addStroke(getStroke('shu'), {
+        cross : {by : 0.25, at : 0.5, to: 0},
+        rotate : 10,
+        scale : 1.5
+    })
     sketch.splitByStroke();
 
     // sketch.addStroke(getStroke('shu'), {splitting: true})
@@ -61,7 +66,5 @@ let strokes = [];
     // for (let point of points){
     //     ctx.point(point);
     // }
-
-    ctx.point(sketch.strokes[0].pointAt(0.25));
 
     sketch.draw(ctx);

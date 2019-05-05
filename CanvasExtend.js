@@ -13,12 +13,14 @@ CanvasRenderingContext2D.prototype.bezierCurveTo = function(cv1, cv2, ev){
 
 CanvasRenderingContext2D.prototype.point = function(v){
 
-    let dpr = window.devicePixelRatio,
-        ratio = this.canvas.height/2/dpr;
-
-    this.beginPath()
-    this.arc(v.x*ratio, v.y*ratio, 3, 0, Math.PI*2);
-    this.stroke();
+    if (v != undefined){
+        let dpr = window.devicePixelRatio,
+            ratio = this.canvas.height/2/dpr;
+    
+        this.beginPath()
+        this.arc(v.x*ratio, v.y*ratio, 3, 0, Math.PI*2);
+        this.stroke();
+    }
 }
 
 CanvasRenderingContext2D.prototype.drawZig = function(vecs){
@@ -39,10 +41,12 @@ CanvasRenderingContext2D.prototype.drawZig = function(vecs){
 
 CanvasRenderingContext2D.prototype.text = function(text, vec){
 
-    let dpr = window.devicePixelRatio,
-        ratio = this.canvas.height/2/dpr;
-
-    this.fillText(text, vec.x*ratio, vec.y*ratio);
+    if (vec != undefined){
+        let dpr = window.devicePixelRatio,
+            ratio = this.canvas.height/2/dpr;
+    
+        this.fillText(text, vec.x*ratio, vec.y*ratio);
+    }
 
 }
 

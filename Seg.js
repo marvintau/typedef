@@ -29,6 +29,10 @@ class Seg {
         this.tail = tl;
     }
 
+    diff (){
+        return this.tail.sub(this.head);
+    }
+
     len (){
         return this.tail.sub(this.head).mag();
     }
