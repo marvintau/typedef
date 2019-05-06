@@ -53,6 +53,11 @@ class Stroke {
         return samples;
     }
 
+    torque(){
+        console.log("stroke torque", toSegs(this.vecs).map(s => s.torque()));
+        return torqueSum(toSegs(this.vecs).map(s => s.torque()));
+    }
+
     splitBound(polyList){
     
         let actualPolyList = polyList.concat(polyList[0].copy()),
@@ -64,7 +69,7 @@ class Stroke {
     
         // var seg;
         // while (lineSegs.length > 0){
-            // seg = lineSegs.splice(0, 1)[0];
+            // seg = lineSegs.shift()[0];
         for (let [segIndex, seg] of lineSegs.entries()){
             // 1. After handling the first intersection, and there are remaining
             //    segs, we put the first one;

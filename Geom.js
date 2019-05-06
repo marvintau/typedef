@@ -11,6 +11,20 @@ function toSegs(vecList){
     return segs;
 }
 
+// function segTorque(segs){
+//     let torques = segs.map((seg) => seg.torque());
+// }
+
+function torqueSum(torques){
+    let torqueSum = torques.map(t => t.toProduct()).reduce((acc, v) => acc.add(v), new Vec(0, 0));
+    let massSum = torques.map(t => t.mass).reduce((acc, v) => acc + v, 0);
+
+    return new Torque({
+        center: torqueSum.mult((torques.length === 0) ? 0 : 1/massSum),
+        mass : massSum
+    })
+}
+
 function segLengths(segs){
     return segs.map((seg) => seg.len());
 }

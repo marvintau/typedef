@@ -52,6 +52,10 @@ class Seg {
         }.bind(this));
     }
 
+    torque(){
+        return new Torque({center:this.lerp(0.5), mass: this.len()});
+    }
+
     cross(that){
         return segVecCross(this.head, this.tail, that.head, that.tail);
     }

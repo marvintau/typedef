@@ -49,22 +49,16 @@ let strokes = [];
     addStroke('heng', new StrokeSpec({angle: 180, curv:  0.05, shape: 0.35, twist: -1}));
     addStroke('shu',  new StrokeSpec({angle: -90, curv: 0.02, shape: 0.35, twist: 1}));
     addStroke('dian', new StrokeSpec({angle: 45, curv: -0.2, ratio:0.5}));
+    addStroke('pie',  new StrokeSpec({angle: -80, curv: 0.3, twist: 1, shape: -0.5}));
     
     sketch.addStroke(getStroke('heng'), {})
-    sketch.addStroke(getStroke('shu'), {cross : CROSS_SUCC})
-    sketch.addStroke(getStroke('shu'), {
+    sketch.addStroke(getStroke('shu'), {cross : CROSS_SUCC, rotate: 3})
+    sketch.addStroke(getStroke('pie'), {
         cross : {by : 0.25, at : 0.5, to: 0},
         rotate : 10,
         scale : 1.5
     })
     sketch.splitByStroke();
-
-    // sketch.addStroke(getStroke('shu'), {splitting: true})
-    // sketch.getChildByPath([0]).addStroke(getStroke('dian'), {splitting: true});
-
-    // let points = sketch.strokes[0].sample(0.05);
-    // for (let point of points){
-    //     ctx.point(point);
-    // }
+    sketch.addStroke(getStroke('dian'), {}, [4]);
 
     sketch.draw(ctx);

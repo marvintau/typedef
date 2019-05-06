@@ -5,28 +5,41 @@ class Radical {
     constructor(bound){
         this.bound = bound;
         this.centroid = toPolyCentroid(bound);
+        this.torque = new Torque({});
         this.specs = [];
         this.strokes = [];
         this.children = [];
     }
 
-    centerStroke(){
-        let massPoints = [];
-        for (let stroke of this.strokes){
-            massPoints.push(...stroke.sample());
-        }
-        let massCenter = massPoints.reduce((center, massPoint) => center.add(massPoint), new Vec(0, 0)).mult(1/massPoints.length);
+    updateTorque(){
 
-        for (let stroke of this.strokes){
-            stroke.trans((new Vec(0, 0)).sub(massCenter));
+        for (let child of this.children){
+            child.updateTorque();
         }
+
+        let childTorques = this.children.map(c => c.torque),
+            strokeTorques = this.strokes.map(s => s.torque()),
+            totalTorques = childTorques.concat(strokeTorques);
+
+        this.torque = torqueSum(totalTorques);
+        console.log("update torque", this.torque.center, childTorques);
+        for (let stroke of this.strokes){
+            stroke.trans((new Vec(0, 0)).add(this.centroid).sub(this.torque.center));
+        }
+
+    }
+
+    centerStroke(){
     }
 
     addStrokeSpec(strokeSpec){
         this.specs.push(strokeSpec);
     }
 
-    addStroke(strokeSpec, attr={}){
+    addStroke(strokeSpec, attr={}, path=[]){
+
+        let refs = this.getChildListByPath(path),
+            ref = refs.last();
 
         if(attr.rotate) {
             strokeSpec.rotate(attr.rotate);
@@ -40,16 +53,17 @@ class Radical {
         
         if (attr.cross) {
             let {at, by, to} = attr.cross;
-            console.log("to", this.strokes[to]);
+            console.log("to", ref.strokes[to]);
             let currPoint = stroke.pointAt(by),
-                theStroke = (to !== undefined) ? this.strokes[to] : this.strokes.last(),
+                theStroke = (to !== undefined) ? ref.strokes[to] : ref.strokes.last(),
                 lastPoint = theStroke.pointAt(at);
 
             stroke.trans(lastPoint.sub(currPoint));
         }
 
-        this.strokes.push(stroke);
-        this.centerStroke();
+        ref.strokes.push(stroke);
+
+        this.updateTorque();
     }
 
     splitByStroke(){
@@ -62,7 +76,7 @@ class Radical {
             } else {
                 let newChildren = [];
                 while(this.children.length > 0 ) {
-                    let {left, right} = stroke.splitBound(this.children.splice(0, 1)[0].bound);
+                    let {left, right} = stroke.splitBound(this.children.shift().bound);
                     if(left.length > 0) newChildren.push(new Radical(left));
                     if(right.length > 0) newChildren.push(new Radical(right));
                 }
@@ -75,9 +89,17 @@ class Radical {
     getChildByPath(pathArray){
         let ref = this;
         while(pathArray.length > 0){
-            ref = ref.children[pathArray.splice(0, 1)];
+            ref = ref.children[pathArray.shift()];
         }
         return ref;
+    }
+
+    getChildListByPath(pathArray){
+        let refs = [this];
+        while(pathArray.length > 0){
+            refs.push(refs.last().children[pathArray.shift()]);
+        }
+        return refs;
     }
 
     shrink(len){

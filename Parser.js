@@ -2,7 +2,7 @@ let tokenExec = function(tokens){
 
     for (;tokens.length > 0;){
         if (!(tokens[0] in instrs)) {
-            tokens.splice(0, 1); continue;
+            tokens.shift(); continue;
         };
         let args = instrs[tokens[0]].args,
             expr = args === "*" ? 
