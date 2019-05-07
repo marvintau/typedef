@@ -3,7 +3,7 @@ var BOUND_OFFSET = 0.02;
 
 class Radical {
     constructor(bound){
-        this.bound = bound;
+        this.bound = bound.map(v => v.copy());
         this.centroid = toPolyCentroid(bound);
         this.torque = new Torque({});
         this.specs = [];
@@ -22,14 +22,36 @@ class Radical {
             totalTorques = childTorques.concat(strokeTorques);
 
         this.torque = torqueSum(totalTorques);
-        console.log("update torque", this.torque.center, childTorques);
-        for (let stroke of this.strokes){
-            stroke.trans((new Vec(0, 0)).add(this.centroid).sub(this.torque.center));
-        }
-
+        this.transStrokes(this.centroid.sub(this.torque.center));
     }
 
-    centerStroke(){
+    allDescendants() {
+        let res = [];
+    
+        for (let radical of this.children){
+            res.push(...radical.allDescendants());
+            res.push(radical);
+        }
+    
+        return res;    
+    }
+    
+
+    transStrokes(trans){
+        this.allDescendants().map(e => e.strokes)
+            .concat(this.strokes).flat()
+            .forEach(e => e.trans(trans));
+    }
+
+    transBoundings(trans){
+        this.allDescendants().map(e => e.bound)
+            .concat(this.bound).flat()
+            .forEach(e => e.iadd(trans));
+    }
+
+    correctPosition(){
+        this.updateTorque();
+        this.transBoundings(this.centroid.sub(this.torque.center));
     }
 
     addStrokeSpec(strokeSpec){
@@ -63,7 +85,10 @@ class Radical {
 
         ref.strokes.push(stroke);
 
-        this.updateTorque();
+        if(path.length === 0){
+            this.bound = dilateBBox(toBBox(this.strokes.map(e => e.vecs).flat()), 0.1);
+            this.bound.forEach(v => v.attr.type = 'B');
+        }
     }
 
     splitByStroke(){
@@ -77,6 +102,7 @@ class Radical {
                 let newChildren = [];
                 while(this.children.length > 0 ) {
                     let {left, right} = stroke.splitBound(this.children.shift().bound);
+
                     if(left.length > 0) newChildren.push(new Radical(left));
                     if(right.length > 0) newChildren.push(new Radical(right));
                 }
@@ -84,6 +110,7 @@ class Radical {
             }
 
         this.children.forEach(child => child.shrink(BOUND_OFFSET));
+        console.log(this.children.map(c => convexity(c.bound)));
     }
 
     getChildByPath(pathArray){

@@ -50,15 +50,21 @@ let strokes = [];
     addStroke('shu',  new StrokeSpec({angle: -90, curv: 0.02, shape: 0.35, twist: 1}));
     addStroke('dian', new StrokeSpec({angle: 45, curv: -0.2, ratio:0.5}));
     addStroke('pie',  new StrokeSpec({angle: -80, curv: 0.3, twist: 1, shape: -0.5}));
+    addStroke('gou',  new StrokeSpec({ratio:0.3, angle: 30, curv: -0.3, twist: 1, shape: -0.5}));
     
     sketch.addStroke(getStroke('heng'), {})
     sketch.addStroke(getStroke('shu'), {cross : CROSS_SUCC, rotate: 3})
+    sketch.addStroke(getStroke('gou'), {cross : CROSS_SUCC});
     sketch.addStroke(getStroke('pie'), {
         cross : {by : 0.25, at : 0.5, to: 0},
         rotate : 10,
         scale : 1.5
     })
+
     sketch.splitByStroke();
-    sketch.addStroke(getStroke('dian'), {}, [4]);
+    sketch.addStroke(getStroke('dian'), {}, [1]);
+    sketch.addStroke(getStroke('dian'), {}, [7]);
+    sketch.correctPosition();
+    // console.log(sketch.allDescendants(), sketch.transAllStrokes());
 
     sketch.draw(ctx);

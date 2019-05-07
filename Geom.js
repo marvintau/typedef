@@ -1,4 +1,55 @@
 
+function same(array, func){
+    return array.every((v, i, a) => func(v) === func(a[0]));
+}
+
+function toBBox(vecList){
+
+    let xs = vecList.map(v => v.x),
+        ys = vecList.map(v => v.y),
+        left =  Math.min(...xs),
+        right = Math.max(...xs),
+        top =   Math.max(...ys),
+        bott =  Math.min(...ys);
+
+    return [
+        new Vec(right, top),
+        new Vec(left, top),
+        new Vec(left, bott),
+        new Vec(right, bott)
+    ]
+}
+
+function convexity(vecList){
+    if(vecList.length > 2){
+        let segs = toSegs(vecList.concat(vecList[0]));
+        let dirs = segs.concat(segs[0]).map(seg => seg.dir());
+
+        let most = dirs.slice(0, -1),
+            rest = dirs.slice(1);
+        
+        let res = [];
+        for (let i = 0; i < most.length; i++){
+            res.push(most[i].cross(rest[i]));
+        }
+        return same(res, Math.sign);
+    } else {
+        return false;
+    }
+}
+
+function dilateBBox(bbox, len){
+    let centroid = toPolyCentroid(bbox);
+
+    let dilated = [];
+    for (let vec of bbox) {
+        let mag = vec.sub(centroid).mag();
+        dilated.push(vec.sub(centroid).mult((mag + len) / mag).add(centroid));
+    }
+
+    return dilated;
+}
+
 function toSegs(vecList){
     let most = vecList.slice(0, -1),
         rest = vecList.slice(1);
@@ -10,10 +61,6 @@ function toSegs(vecList){
     segs.reverse();
     return segs;
 }
-
-// function segTorque(segs){
-//     let torques = segs.map((seg) => seg.torque());
-// }
 
 function torqueSum(torques){
     let torqueSum = torques.map(t => t.toProduct()).reduce((acc, v) => acc.add(v), new Vec(0, 0));

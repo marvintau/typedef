@@ -177,7 +177,8 @@ class Vec{
     }
 
     norm(){
-        return this.mult(1/this.mag())
+        let mag = this.mag();
+        return this.mult(mag === 0 ? 0 : 1/mag);
     }
 
     angle(){

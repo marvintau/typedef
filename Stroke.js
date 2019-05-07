@@ -1,6 +1,10 @@
 class Stroke {
     constructor(vecList){
         this.vecs = vecList;
+        
+        for(let v of this.vecs) if (v.attr.type != "S"){
+            v.attr.type = "S";
+        }
     }
 
     trans(transVec){
@@ -54,7 +58,7 @@ class Stroke {
     }
 
     torque(){
-        console.log("stroke torque", toSegs(this.vecs).map(s => s.torque()));
+        // console.log("stroke torque", toSegs(this.vecs).map(s => s.torque()));
         return torqueSum(toSegs(this.vecs).map(s => s.torque()));
     }
 
