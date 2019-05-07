@@ -17,6 +17,10 @@ class Radical {
         return toPolyArea(toSegs(this.bound.concat(this.bound[0].copy())));
     }
 
+    density(){
+        return torqueSum(this.strokes.map(s => s.torque())).mass / this.boundArea();
+    }
+
     updateTorque(){
 
         for (let child of this.children){
@@ -153,13 +157,17 @@ class Radical {
     }
     
 
-    draw(ctx, num){
-        ctx.drawBound(this.bound, num);
+    draw(ctx, par){
+        let den = this.density();
+        if (den > 0) console.log(par, this.density());
+        let color = {r: this.density(), g:0, b: 0};
+
+        ctx.drawBound(this.bound, par, color);
         for (let stroke of this.strokes){
             stroke.draw(ctx);
         }
         for (let [index, child] of this.children.entries()){
-            let label = num ? `${num}-${index}` : `${index}`;
+            let label = par ? `${par}-${index}` : `${index}`;
             child.draw(ctx, label);
         }
     }

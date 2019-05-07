@@ -48,17 +48,7 @@ class Stroke {
         return segs[ithSeg].lerp(1 - lenInSeg/lens[ithSeg]);
     }
 
-    sample(res=0.05){
-        let samples = [];
-        let segs = toSegs(this.vecs);
-        for (let seg of segs){
-            samples.push(...seg.sample(res));
-        }
-        return samples;
-    }
-
     torque(){
-        // console.log("stroke torque", toSegs(this.vecs).map(s => s.torque()));
         return torqueSum(toSegs(this.vecs).map(s => s.torque()));
     }
 

@@ -50,7 +50,7 @@ CanvasRenderingContext2D.prototype.text = function(text, vec){
 
 }
 
-CanvasRenderingContext2D.prototype.drawBound = function(vecs, num){
+CanvasRenderingContext2D.prototype.drawBound = function(vecs, num, {r, g, b}){
 
     let centroid = toPolyCentroid(vecs);
     if (num !== undefined){
@@ -62,7 +62,7 @@ CanvasRenderingContext2D.prototype.drawBound = function(vecs, num){
         this.point(centroid);
     }
 
-    this.fillStyle = 'rgb(0, 0, 0, 0.1)';
+    this.fillStyle = `rgba(${r*128}, ${g}, ${b}, 0.1)`;
     this.beginPath();
     this.drawZig(vecs);
     this.closePath();

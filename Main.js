@@ -48,7 +48,7 @@ let strokes = [];
     
     addStroke('heng', new StrokeSpec({angle: 180, curv:  0.05, shape: 0.35, twist: -1}));
     addStroke('shu',  new StrokeSpec({angle: -90, curv: 0.02, shape: 0.35, twist: 1}));
-    addStroke('dian', new StrokeSpec({angle: 45, curv: -0.2, ratio:0.5}));
+    addStroke('dian', new StrokeSpec({angle: -135, curv: 0.2, ratio:0.5}));
     addStroke('pie',  new StrokeSpec({angle: -80, curv: 0.3, twist: 1, shape: -0.5}));
     addStroke('gou',  new StrokeSpec({ratio:0.3, angle: 30, curv: -0.3, twist: 1, shape: -0.5}));
     
