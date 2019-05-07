@@ -2,13 +2,19 @@
 var BOUND_OFFSET = 0.02;
 
 class Radical {
-    constructor(bound){
+    constructor(bound, upperLevelArea){
         this.bound = bound.map(v => v.copy());
         this.centroid = toPolyCentroid(bound);
         this.torque = new Torque({});
         this.specs = [];
         this.strokes = [];
         this.children = [];
+                
+        this.areaRatio = upperLevelArea === undefined ? 1 : this.boundArea()/upperLevelArea;
+    }
+
+    boundArea(){
+        return toPolyArea(toSegs(this.bound.concat(this.bound[0].copy())));
     }
 
     updateTorque(){
@@ -71,6 +77,8 @@ class Radical {
             strokeSpec.scale(attr.scale);
         }
 
+        strokeSpec.scale(Math.pow(ref.areaRatio, 0.25));
+
         let stroke = strokeSpec.toStroke();
         
         if (attr.cross) {
@@ -88,29 +96,32 @@ class Radical {
         if(path.length === 0){
             this.bound = dilateBBox(toBBox(this.strokes.map(e => e.vecs).flat()), 0.1);
             this.bound.forEach(v => v.attr.type = 'B');
+
         }
     }
 
     splitByStroke(){
+
+        let thisArea = this.boundArea();
+
         for (let stroke of this.strokes)
             if(this.children.length === 0){
                 let {left, right} = stroke.splitBound(this.bound);
                 
-                if(left.length > 0) this.children.push(new Radical(left));
-                if(right.length > 0) this.children.push(new Radical(right));
+                if(left.length > 0) this.children.push(new Radical(left, thisArea));
+                if(right.length > 0) this.children.push(new Radical(right, thisArea));
             } else {
                 let newChildren = [];
                 while(this.children.length > 0 ) {
                     let {left, right} = stroke.splitBound(this.children.shift().bound);
 
-                    if(left.length > 0) newChildren.push(new Radical(left));
-                    if(right.length > 0) newChildren.push(new Radical(right));
+                    if(left.length > 0) newChildren.push(new Radical(left, thisArea));
+                    if(right.length > 0) newChildren.push(new Radical(right, thisArea));
                 }
                 this.children = newChildren;
             }
 
         this.children.forEach(child => child.shrink(BOUND_OFFSET));
-        console.log(this.children.map(c => convexity(c.bound)));
     }
 
     getChildByPath(pathArray){
