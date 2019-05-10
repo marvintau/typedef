@@ -68,40 +68,33 @@ class Radical {
         this.specs.push(strokeSpec);
     }
 
-    addStroke(strokeSpec, attr={}, path=[]){
+    addStroke(strokeSpec, path=[]){
 
         let refs = this.getChildListByPath(path),
             ref = refs.last();
 
-        if(attr.rotate) {
-            strokeSpec.rotate(attr.rotate);
-        }
-
-        if(attr.scale) {
-            strokeSpec.scale(attr.scale);
-        }
-
         strokeSpec.scale(Math.pow(ref.areaRatio, 0.25));
 
-        let stroke = strokeSpec.toStroke();
-        
-        if (attr.cross) {
-            let {at, by, to} = attr.cross;
-            console.log("to", ref.strokes[to]);
-            let currPoint = stroke.pointAt(by),
-                theStroke = (to !== undefined) ? ref.strokes[to] : ref.strokes.last(),
-                lastPoint = theStroke.pointAt(at);
-
-            stroke.trans(lastPoint.sub(currPoint));
-        }
-
-        ref.strokes.push(stroke);
+        ref.strokes.push(strokeSpec.toStroke());
 
         if(path.length === 0){
             this.bound = dilateBBox(toBBox(this.strokes.map(e => e.vecs).flat()), 0.1);
-            this.bound.forEach(v => v.attr.type = 'B');
-
         }
+    }
+
+    hinge({prevIndex, prevPos, nextIndex, nextPos}){
+
+        let prev = this.strokes[prevIndex],
+            next = this.strokes[nextIndex],
+            prevPoint = prev.pointAt(prevPos),
+            nextPoint = next.pointAt(nextPos)
+
+        next.trans(prevPoint.sub(nextPoint));
+
+        // if(path.length === 0){
+            this.bound = dilateBBox(toBBox(this.strokes.map(e => e.vecs).flat()), 0.1);
+        // }
+
     }
 
     splitByStroke(){

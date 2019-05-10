@@ -1,14 +1,20 @@
-var CROSS_END = 0.999999,
-    CROSS_SUCC = {by: 0, at: CROSS_END};
+var HINGE_END = 0.999999,
+    HINGE_SUCC = {by: 0, at: HINGE_END};
 
-let strokes = [];
+var STROKE_COUNTER = 0;
+
+let strokes = [],
+    specSketch = {};
 
     function addStroke(strokeName, strokeSpec){
         strokes[strokeName] = strokeSpec;
     }
 
-    function getStroke(strokeName){
-        return strokes[strokeName].copy();
+    function getStroke(strokeName, {scale, rotate} = {}){
+        let stroke = strokes[strokeName].copy();
+        stroke.id = `${STROKE_COUNTER}-${strokeName}`;
+
+        return stroke.scale(scale).rotate(rotate);
     }
 
     let sketch = new Radical([new Vec(0.89, 0.89), new Vec(-0.89, 0.89), new Vec(-0.89, -0.89), new Vec(0.89, -0.89)]);
@@ -46,25 +52,27 @@ let strokes = [];
     let editorElement = document.getElementById('editor');
     // let editor = new Editor(editorElement, submitFunc);
     
-    addStroke('heng', new StrokeSpec({angle: 180, curv:  0.05, shape: 0.35, twist: -1}));
-    addStroke('shu',  new StrokeSpec({angle: -90, curv: 0.02, shape: 0.35, twist: 1}));
-    addStroke('dian', new StrokeSpec({angle: -135, curv: 0.2, ratio:0.5}));
-    addStroke('pie',  new StrokeSpec({angle: -80, curv: 0.3, twist: 1, shape: -0.5}));
-    addStroke('gou',  new StrokeSpec({ratio:0.3, angle: 30, curv: -0.3, twist: 1, shape: -0.5}));
+
+    addStroke('heng', new StrokeSpec({id:0, angle: 180, curv:  0.05, shape: 0.35, twist: -1}));
+    addStroke('shu',  new StrokeSpec({id:1, angle: -90, curv: 0.02, shape: 0.35, twist: 1}));
+    addStroke('dian', new StrokeSpec({id:2, angle: -135, curv: 0.2, ratio:0.5}));
+    addStroke('pie',  new StrokeSpec({id:3, angle: -80, curv: 0.3, twist: 1, shape: -0.5}));
+    addStroke('gou',  new StrokeSpec({id:4, angle: 30, curv: -0.3, ratio:0.3, twist: 1, shape: -0.5}));
     
-    sketch.addStroke(getStroke('heng'), {})
-    sketch.addStroke(getStroke('shu'), {cross : CROSS_SUCC, rotate: 3})
-    sketch.addStroke(getStroke('gou'), {cross : CROSS_SUCC});
-    sketch.addStroke(getStroke('pie'), {
-        cross : {by : 0.25, at : 0.5, to: 0},
-        rotate : 10,
-        scale : 1.5
-    })
+
+
+    sketch.addStroke(getStroke('heng', {scale: 1.1}));
+    sketch.addStroke(getStroke('shu', {rotate: 3}));
+    sketch.addStroke(getStroke('gou'));
+    sketch.addStroke(getStroke('pie', {rotate : 10, scale : 1.5}));
+
+    sketch.hinge({prevIndex: 0, prevPos: HINGE_END, nextIndex: 1, nextPos: 0});
+    sketch.hinge({prevIndex: 1, prevPos: HINGE_END, nextIndex: 2, nextPos: 0});
+    sketch.hinge({prevIndex: 0, prevPos: 0.51, nextIndex: 3, nextPos: 0.25});
 
     sketch.splitByStroke();
-    sketch.addStroke(getStroke('dian'), {}, [1]);
-    sketch.addStroke(getStroke('dian'), {}, [7]);
+    sketch.addStroke(getStroke('dian'), [1]);
+    sketch.addStroke(getStroke('dian'), [7]);
     sketch.correctPosition();
-    // console.log(sketch.allDescendants(), sketch.transAllStrokes());
 
     sketch.draw(ctx);

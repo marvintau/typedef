@@ -6,13 +6,16 @@ function toFragStroke(frag){
 
 class StrokeSpec {
     
-    constructor({ratio, angle, curv, shape, twist}){
+    constructor({id, ratio, angle, curv, shape, twist}){
 
+        this.id = id;
         this.ratio = ratio ? ratio : 0.9;
         this.angle = angle ? angle : 0;
         this.curv  = curv  ? curv  : 0;
         this.shape = shape ? shape : 0;
         this.twist = twist ? twist : 1;
+        this.type  = 'hidden';
+        this.joins = [];
     }
 
     copy(){
@@ -20,12 +23,12 @@ class StrokeSpec {
     }
 
     scale(ratio){
-        this.ratio *= ratio;
+        if (ratio !== undefined) this.ratio *= ratio;
         return this;
     }
 
     rotate(angle){
-        this.angle += angle;
+        if (angle !== undefined) this.angle += angle;
         return this;
     }
 
