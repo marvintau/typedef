@@ -3,13 +3,18 @@ var BOUND_OFFSET = 0.02;
 
 class Radical {
     constructor(bound, upperLevelArea){
-        this.bound = bound.map(v => v.copy());
+        this.reset(bound.map(v => v.copy()), upperLevelArea);
+    }
+
+    reset(bound, upperLevelArea){
+
+        this.bound = bound ? bound : this.bound;
+
         this.centroid = toPolyCentroid(bound);
         this.torque = new Torque({});
         this.specs = [];
         this.strokes = [];
         this.children = [];
-                
         this.areaRatio = upperLevelArea === undefined ? 1 : this.boundArea()/upperLevelArea;
     }
 
@@ -149,6 +154,22 @@ class Radical {
         this.bound = shrinked;
     }
     
+    do(operation, args){
+        if(operation === 'addStroke'){
+            let {name, path, ...rest} = args;
+            // console.log("do, addStroke", name, path, rest,);
+            this.addStroke(getStroke(name, rest), path);
+        } else {
+            this[operation](args);
+        }
+    }
+
+    exec(program){
+        for (let instruction of program){
+            let {opname, ...rest} = instruction;
+            this.do(opname, rest);
+        }
+    }
 
     draw(ctx, par){
         let den = this.density();

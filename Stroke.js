@@ -43,7 +43,6 @@ class Stroke {
                 break;
             }
         }
-        console.log(ithSeg);
 
         return segs[ithSeg].lerp(1 - lenInSeg/lens[ithSeg]);
     }
