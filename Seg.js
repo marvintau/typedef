@@ -45,11 +45,19 @@ class Seg {
         return this.head.add(this.tail.sub(this.head).mult(ratio));
     }
 
-    sample(epoch){
-        let steps = parseInt(this.len() / epoch);
-        return Array(steps).fill(0).map(function(e, i){
-            return this.lerp(i * epoch)
-        }.bind(this));
+    trans(vec){
+        this.head.iadd(vec);
+        this.tail.iadd(vec);
+    }
+
+    rotate(angle){
+        this.head.irotate(angle);
+        this.tail.irotate(angle);
+    }
+
+    scale(mag){
+        this.head.imult(mag);
+        this.tail.imult(mag);
     }
 
     torque(){

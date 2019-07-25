@@ -15,7 +15,7 @@ CanvasRenderingContext2D.prototype.point = function(v){
 
     if (v != undefined){
         let dpr = window.devicePixelRatio,
-            ratio = this.canvas.height/2/dpr;
+            ratio = this.canvas.height/dpr;
     
         this.beginPath()
         this.arc(v.x*ratio, v.y*ratio, 3, 0, Math.PI*2);
@@ -23,19 +23,17 @@ CanvasRenderingContext2D.prototype.point = function(v){
     }
 }
 
-CanvasRenderingContext2D.prototype.drawZig = function(vecs){
+CanvasRenderingContext2D.prototype.drawZig = function(segs){
 
     let dpr = window.devicePixelRatio,
         ratio = this.canvas.height/2/dpr;
-
     try {
-        let [first, ...rest] = vecs;
-        this.moveToVec(first.mult(ratio));
-        for (let [index, vec] of rest.entries()){
-            this.lineToVec(vec.mult(ratio));
+        this.moveToVec(segs[0].head.mult(ratio));
+        for (let seg of segs){
+            this.lineToVec(seg.tail.mult(ratio));
         }
     } catch {
-        console.log('Illegal line segs: ', vecs);
+        console.log('Illegal line segs: ', segs);
     }
 }
 

@@ -56,7 +56,7 @@ function toSegs(vecList){
 
     let segs = [];
     while(most.length > 0){
-        segs.push(new Seg(most.pop(), rest.pop()));
+        segs.push(new Seg(most.pop().copy(), rest.pop().copy()));
     }
     segs.reverse();
     return segs;

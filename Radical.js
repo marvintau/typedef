@@ -2,15 +2,18 @@
 var BOUND_OFFSET = 0.02;
 
 class Radical {
-    constructor(bound, upperLevelArea){
-        this.reset(bound.map(v => v.copy()), upperLevelArea);
+    constructor(bound, upperLevelArea, offset){
+        this.reset(bound.map(v => v.copy()), upperLevelArea, offset);
     }
 
-    reset(bound, upperLevelArea){
+    reset(bound, upperLevelArea, offset){
 
         this.bound = bound ? bound : this.bound;
 
+        offset = offset ? offset : new Vec(0, 0);
         this.centroid = toPolyCentroid(bound);
+        this.centroid.iadd(offset);
+
         this.torque = new Torque({});
         this.specs = [];
         this.strokes = [];
@@ -18,12 +21,26 @@ class Radical {
         this.areaRatio = upperLevelArea === undefined ? 1 : this.boundArea()/upperLevelArea;
     }
 
+    allDescendants() {
+        let res = [];
+    
+        for (let radical of this.children){
+            res.push(...radical.allDescendants(), radical);
+        }
+    
+        return res;    
+    }
+
+    allStrokes(){
+        return [this.strokes, ...this.allDescendants().map(r => r.strokes)].flat();
+    }
+
     boundArea(){
         return toPolyArea(toSegs(this.bound.concat(this.bound[0].copy())));
     }
 
     density(){
-        return torqueSum(this.strokes.map(s => s.torque())).mass / this.boundArea();
+        return torqueSum(this.allStrokes().map(s => s.torque())).mass / this.boundArea();
     }
 
     updateTorque(){
@@ -39,19 +56,7 @@ class Radical {
         this.torque = torqueSum(totalTorques);
         this.transStrokes(this.centroid.sub(this.torque.center));
     }
-
-    allDescendants() {
-        let res = [];
     
-        for (let radical of this.children){
-            res.push(...radical.allDescendants());
-            res.push(radical);
-        }
-    
-        return res;    
-    }
-    
-
     transStrokes(trans){
         this.allDescendants().map(e => e.strokes)
             .concat(this.strokes).flat()
@@ -73,32 +78,23 @@ class Radical {
         this.specs.push(strokeSpec);
     }
 
-    addStroke(strokeSpec, path=[]){
+    addStroke(strokeSpec, path){
 
-        let refs = this.getChildListByPath(path),
-            ref = refs.last();
-
-        strokeSpec.scale(Math.pow(ref.areaRatio, 0.25));
-
+        let ref = this.getChildPath(path).last();
+        
+        strokeSpec.scale(Math.pow(ref.areaRatio, 0.5));
         ref.strokes.push(strokeSpec.toStroke());
-
-        if(path.length === 0){
-            this.bound = dilateBBox(toBBox(this.strokes.map(e => e.vecs).flat()), 0.1);
-        }
+        console.log(ref.strokes);
     }
 
     hinge({prevIndex, prevPos, nextIndex, nextPos}){
 
         let prev = this.strokes[prevIndex],
             next = this.strokes[nextIndex],
-            prevPoint = prev.pointAt(prevPos),
-            nextPoint = next.pointAt(nextPos)
+            prevPoint = prev.pointAt(prevPos).point,
+            nextPoint = next.pointAt(nextPos).point
 
         next.trans(prevPoint.sub(nextPoint));
-
-        // if(path.length === 0){
-            this.bound = dilateBBox(toBBox(this.strokes.map(e => e.vecs).flat()), 0.1);
-        // }
 
     }
 
@@ -126,15 +122,7 @@ class Radical {
         this.children.forEach(child => child.shrink(BOUND_OFFSET));
     }
 
-    getChildByPath(pathArray){
-        let ref = this;
-        while(pathArray.length > 0){
-            ref = ref.children[pathArray.shift()];
-        }
-        return ref;
-    }
-
-    getChildListByPath(pathArray){
+    getChildPath(pathArray){
         let refs = [this];
         while(pathArray.length > 0){
             refs.push(refs.last().children[pathArray.shift()]);
@@ -156,19 +144,34 @@ class Radical {
     
     do(operation, args){
         if(operation === 'addStroke'){
-            let {name, path, ...rest} = args;
-            // console.log("do, addStroke", name, path, rest,);
+            let {name, path=[], ...rest} = args;
             this.addStroke(getStroke(name, rest), path);
+
         } else {
             this[operation](args);
         }
     }
 
     exec(program){
+
+        // adjusted is an array that records the adjusted values of
+        // parameters. Will be passed into addStroke.
+
+
         for (let instruction of program){
             let {opname, ...rest} = instruction;
             this.do(opname, rest);
         }
+
+        let allStrokes = this.allStrokes();
+
+        for (let i = 0; i < allStrokes.length; i++){
+            for (let j = 0; j < i; j++){
+                console.log(i, j, allStrokes[i].centric(allStrokes[j]))
+            }
+        }
+
+        this.correctPosition();
     }
 
     draw(ctx, par){

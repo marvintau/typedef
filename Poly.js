@@ -1,12 +1,18 @@
+
+function partialSum(segs, component){
+    return segs.map(seg => seg.head[component] + seg.tail[component]);
+}
+
+
+
 class Poly {
-    constructor(vecs){
-        this.update(vecs);
+    constructor(segs){
+        this.update(segs);
     }
 
     update(vecs){
 
         this.segs = toSegs(vecs);
-        this.bound = getBound(vecs);
 
         // Update area
         this.area = this.segs.map(seg => seg.incross()).sum()/2;

@@ -1,35 +1,42 @@
 class Stroke {
-    constructor(vecList){
-        this.vecs = vecList;
-        
-        for(let v of this.vecs) if (v.attr.type != "S"){
-            v.attr.type = "S";
+    constructor(segList, closed){
+        this.segs = segList;
+
+        if (closed){
+            this.closed = true;
+            let conn = new Seg(this.segs.last().tail.copy(), this.segs[0].head.copy());
+            this.segs.push(conn); 
         }
     }
 
     trans(transVec){
-        for (let vec of this.vecs){
-            vec.iadd(transVec);
+        for (let seg of this.segs){
+            seg.trans(transVec);
         }
     }
 
     rotate(angle){
-        for (let i = 1; i < this.vecs.length; i++){
-            this.vecs[i].isub(this.vecs[0]);
-            this.vecs[i].irotate(angle);
-            this.vecs[i].iadd(this.vecs[0]);
+        let headOffset = this.segs[0].head.copy().mult(1);
+        for (let i = 0; i < this.segs.length; i++){
+            let seg = this.segs[i];
+            seg.trans(headOffset.neg());
+            seg.rotate(angle);
+            seg.trans(headOffset);
         }
+
     }
 
     scale(ratio){
-        this.vecs = toSegs(this.vecs)
-            .map(seg => seg.diff().mult(ratio))
-            .reduce((acc, val) => acc.concat(acc.last().add(val)), this.vecs[0]);
+        let headOffset = this.segs[0].head.copy();
+        for(let seg of this.segs){
+            seg.trans(headOffset);
+            seg.scale(ratio);
+            seg.trans(headOffset.neg());
+        }
     }
 
     pointAt(ratio){
-        let segs = toSegs(this.vecs),
-            lens = segLengths(segs),
+        let lens = segLengths(this.segs),
             accum = lens.reduce((acc, x) => acc.concat(acc.last() + x), [0]),
             total = accum.last(),
             given = total * ratio;
@@ -44,11 +51,14 @@ class Stroke {
             }
         }
 
-        return segs[ithSeg].lerp(1 - lenInSeg/lens[ithSeg]);
+        return {
+            point: this.segs[ithSeg].lerp(1 - lenInSeg/lens[ithSeg]),
+            tan: this.segs[ithSeg].dir()
+        };
     }
 
     torque(){
-        return torqueSum(toSegs(this.vecs).map(s => s.torque()));
+        return torqueSum(this.segs.map(s => s.torque()));
     }
 
     splitBound(polyList){
@@ -60,10 +70,8 @@ class Stroke {
         let enter, leave,
             intersection = [];
     
-        // var seg;
-        // while (lineSegs.length > 0){
-            // seg = lineSegs.shift()[0];
         for (let [segIndex, seg] of lineSegs.entries()){
+            
             // 1. After handling the first intersection, and there are remaining
             //    segs, we put the first one;
             if(enter !== undefined){
@@ -110,19 +118,27 @@ class Stroke {
     draw(ctx){
         ctx.strokeStyle = 'black';
         ctx.beginPath();
-        ctx.drawZig(this.vecs);
+        ctx.drawZig(this.segs);
         ctx.stroke();
     
         ctx.save();
         ctx.fillStyle = "black";
-        for (let [index, vec] of this.vecs.entries()){
-            ctx.text(index, vec);
+        for (let [index, seg] of this.segs.entries()){
+            ctx.text(index, seg.head);
         }
 
-        // for (let vec of this.sample()){
-        //     console.log(vec);
-        //     ctx.point(vec);
-        // }
         ctx.restore();
+    }
+
+    centric(stroke){
+
+        let prev = this.pointAt(0.5),
+            succ = stroke.pointAt(0.5);
+
+        return {
+            prev : prev.point.sub(succ.point).cross(succ.tan),
+            succ : succ.point.sub(prev.point).cross(prev.tan)
+        }
+
     }
 }

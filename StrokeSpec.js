@@ -46,7 +46,7 @@ class StrokeSpec {
             p.imult(this.ratio);
             p.irotate(this.angle);
         }
-    
+
         return new Stroke(s);
     }
     
