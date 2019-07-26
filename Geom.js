@@ -1,8 +1,4 @@
 
-function same(array, func){
-    return array.every((v, i, a) => func(v) === func(a[0]));
-}
-
 function toBBox(vecList){
 
     let xs = vecList.map(v => v.x),
@@ -48,18 +44,6 @@ function dilateBBox(bbox, len){
     }
 
     return dilated;
-}
-
-function toSegs(vecList){
-    let most = vecList.slice(0, -1),
-        rest = vecList.slice(1);
-
-    let segs = [];
-    while(most.length > 0){
-        segs.push(new Seg(most.pop().copy(), rest.pop().copy()));
-    }
-    segs.reverse();
-    return segs;
 }
 
 function torqueSum(torques){

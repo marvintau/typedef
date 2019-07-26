@@ -1,35 +1,49 @@
 
-function partialSum(segs, component){
-    return segs.map(seg => seg.head[component] + seg.tail[component]);
+class Poly {
+    constructor(contours=(new List(0))){
+        this.contours = contours;
+
+        for (let contour of this.contours){
+            let conn = new Seg(contour.last().tail.copy(), contour[0].head.copy());
+            contour.push(conn); 
+        }
+    }
+
+    draw(ctx){
+        ctx.strokeStyle = 'black';
+        ctx.fillStyle='rgb(0, 0, 0, 0.1)';
+        ctx.beginPath();
+        ctx.drawContours(this.contours);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.save();
+        ctx.fillStyle='rgb(0, 0, 0, 0.5)'
+        for (let contour of this.contours){
+            for (let [index, seg] of contour.entries()){
+                ctx.text(index, seg.head);
+            }
+        }
+        ctx.restore();
+    }
 }
 
+if(!PRODUCTION){
+    let len  = 19, range = 5;
+    let vecsCircles = new List(0);
+    for (let r = 0; r < 6; r++){
 
+        let vecs = Array(len).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.8 * (r+1) / range));
 
-class Poly {
-    constructor(segs){
-        this.update(segs);
+        vecsCircles.push(new Segs(vecs));
+
+        if(r % 2 === 1){
+            console.log(vecsCircles[r]);
+            vecsCircles[r].flip();
+        }
     }
 
-    update(vecs){
-
-        this.segs = toSegs(vecs);
-
-        // Update area
-        this.area = this.segs.map(seg => seg.incross()).sum()/2;
-
-        // update centroid
-        let xPairSums = this.segs.map(seg => seg.head.x + seg.tail.x),
-            yPairSums = this.segs.map(seg => seg.head.y + seg.tail.y),
-            crosses = this.segs.map(seg => seg.incross());
-        
-        this.centroid = new Vec(0, 0);
-
-        let normArea = this.area === 0 ? 1 : this.area;
-
-        while(xPairSums.length > 0){
-            let cross = crosses.pop();
-            this.centroid.x += xPairSums.pop() * cross / (6 * normArea);
-            this.centroid.y += yPairSums.pop() * cross / (6 * normArea);
-        }    
-    }
+    let poly = new Poly(vecsCircles);
+    console.log(poly)
+    poly.draw(ctx);
 }

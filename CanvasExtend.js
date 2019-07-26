@@ -23,19 +23,39 @@ CanvasRenderingContext2D.prototype.point = function(v){
     }
 }
 
-CanvasRenderingContext2D.prototype.drawZig = function(segs){
+CanvasRenderingContext2D.prototype.drawSegs = function(segs){
 
     let dpr = window.devicePixelRatio,
         ratio = this.canvas.height/2/dpr;
     try {
+        this.beginPath();
         this.moveToVec(segs[0].head.mult(ratio));
         for (let seg of segs){
             this.lineToVec(seg.tail.mult(ratio));
         }
+        this.stroke();
     } catch {
         console.log('Illegal line segs: ', segs);
     }
 }
+
+CanvasRenderingContext2D.prototype.drawContours = function(contours){
+
+    let dpr = window.devicePixelRatio,
+        ratio = this.canvas.height/2/dpr;
+    try {
+        for (let contour of contours){
+            this.moveToVec(contour[0].head.mult(ratio));
+            for (let seg of contour){
+                this.lineToVec(seg.tail.mult(ratio));
+            }
+            this.closePath();
+        }
+    } catch {
+        console.log('Illegal line segs: ', contours);
+    }
+}
+
 
 CanvasRenderingContext2D.prototype.text = function(text, vec){
 

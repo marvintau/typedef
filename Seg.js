@@ -9,7 +9,7 @@
 // 
 // cross(P1-P3, P3-P4)
 
-function segVecCross(head1, tail1, head2, tail2){
+function segIntersect(head1, tail1, head2, tail2){
     let h1h2 = head1.sub(head2),
         h1t1 = head1.sub(tail1),
         h2t2 = head2.sub(tail2),
@@ -64,11 +64,17 @@ class Seg {
         return new Torque({center:this.lerp(0.5), mass: this.len()});
     }
 
-    cross(that){
-        return segVecCross(this.head, this.tail, that.head, that.tail);
+    intersect(that){
+        return segIntersect(this.head, this.tail, that.head, that.tail);
     }
 
-    incross(){
+    cross(){
         return this.head.cross(this.tail);
+    }
+
+    reverse(){
+        let temp = this.head;
+        this.head = this.tail;
+        this.tail = temp;
     }
 }

@@ -17,8 +17,8 @@ function getStroke(strokeName, {scale, rotate} = {}){
     return stroke.scale(scale).rotate(rotate);
 }
 
-let scl = 0.5;
-let sketch = new Radical([new Vec(scl, scl), new Vec(-scl, scl), new Vec(-scl, -scl), new Vec(scl, -scl)]);
+// let scl = 0.5;
+// let sketch = new Radical([new Vec(scl, scl), new Vec(-scl, scl), new Vec(-scl, -scl), new Vec(scl, -scl)]);
 
 let submitFunc = function(text) {
 
@@ -39,27 +39,15 @@ let submitFunc = function(text) {
     // ctx.draw();
 }
 
-let canvas = document.createElement('canvas'),
-    ctx = canvas.getContext('2d'),
-    dpr = window.devicePixelRatio;
-
-canvas.width  = 400 * dpr;
-canvas.height = 400 * dpr;
-canvas.style.width  = 400;
-canvas.style.height = 400;
-document.getElementById('canvas-container').appendChild(canvas);
-ctx.translate(canvas.width/2, canvas.height/2);
-ctx.scale(dpr, dpr);
-
 let editorElement = document.getElementById('editor');
 // let editor = new Editor(editorElement, submitFunc);
 
-let n = 10
-let randomVecList = Array(n).fill(0).map((e, i) => (new Vec(i/n*360)).mult(0.5));
-let stroke = new Stroke(toSegs(randomVecList), true);
-stroke.rotate(10)
-stroke.trans(new Vec(0.2, 0.0))
-stroke.draw(ctx);
+// let n = 10
+// let randomVecList = Array(n).fill(0).map((e, i) => (new Vec(i/n*360)).mult(0.5));
+// let stroke = new Stroke(toSegs(randomVecList), true);
+// stroke.rotate(10)
+// stroke.trans(new Vec(0.2, 0.0))
+// stroke.draw(ctx);
 
 // function addDictionaryStrokes(list){
 //     for (let entry of list){
