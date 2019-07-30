@@ -1,4 +1,4 @@
-class Vec{
+export default class Vec{
     /**
      * Simple Vector class.
      * 

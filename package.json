@@ -1,0 +1,25 @@
+{
+  "name": "typedef",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marvintau/typedef.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/marvintau/typedef/issues"
+  },
+  "homepage": "https://github.com/marvintau/typedef#readme",
+  "dependencies": {
+    "@babel/core": "^7.5.5",
+    "babel-loader": "^8.0.6",
+    "webpack": "^4.38.0",
+    "webpack-merge": "^4.2.1"
+  }
+}

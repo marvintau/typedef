@@ -1,6 +1,6 @@
 // Extended JavaScript native Array class with handy methods.
 
-class List extends Array {
+export default class List extends Array {
     constructor(...args){
         super(...args);
     }
@@ -21,6 +21,12 @@ class List extends Array {
         return this.reduce((acc, x) => acc.concat(acc.last() + accumFunc(x)), [0])
     }
 
+    // copy the list, and try to clone the elements if
+    // a copy method exists.
+    copy(){
+        return this.map(e => e.copy ? e.copy() : e);
+    }
+
     zip(func=(e)=>e){
         if((this[0].length) && (this[0].length > 0) && this.same(e => e.length)){
             let newList = this[0].map((_e, i) => {
@@ -31,7 +37,7 @@ class List extends Array {
     }
 }
 
-if(!PRODUCTION){
+(() => {
     let list = new List(1,2,3);
     console.assert(list[0]===1 && list.length===3, 'List: Constructor failed');
     console.assert(list.sum(e=>e*2)===12, 'List: sum failed');
@@ -39,4 +45,4 @@ if(!PRODUCTION){
 
     let listMapped = list.map(e => [e, e*2]);
     console.assert(listMapped.zip().last().sum()==12, 'List: zip failed');
-}
+})();

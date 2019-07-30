@@ -23,7 +23,9 @@ function segIntersect(head1, tail1, head2, tail2){
     return {t, u, p}
 }
 
-class Seg {
+import Vec from './Vec';
+
+export default class Seg {
     constructor(hd, tl){
         this.head = hd;
         this.tail = tl;
@@ -72,9 +74,25 @@ class Seg {
         return this.head.cross(this.tail);
     }
 
+    // the previous one connect with the 
+    angleBisect(that){
+        if(that.head == this.tail){
+            
+            let thisDir = this.dir().neg(),
+                thatDir = that.dir();
+
+            return thisDir.add(thatDir).mult(Math.sign(thisDir.cross(thatDir))).norm();
+
+        } else console.error('angleBisector is only permitted if two segs share same vec', this, that);
+    }
+
     reverse(){
         let temp = this.head;
         this.head = this.tail;
         this.tail = temp;
+    }
+
+    copy(){
+        return new Seg(this.head.copy(), this.tail.copy());
     }
 }

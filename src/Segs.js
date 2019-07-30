@@ -1,11 +1,23 @@
-class Segs extends List {
-    constructor(vecs){
-        let list = new List(vecs.slice(0, -1), vecs.slice(1))
-            .zip(e=>new Seg(...e));
-        super(...list);
+import List from './List';
+import Seg from './Seg';
+
+export default class Segs extends List {
+    constructor(...segs){
+        super(...segs);
     }
 
     // torque calculation will be added here.
+
+    fromVecs(vecs){
+        let list = new List(vecs.slice(0, -1), vecs.slice(1))
+        .zip(e=>new Seg(...e));
+
+        while(list.length > 0){
+            this.push(list.pop());
+        }
+        this.reverse();
+        return this;
+    }
 
     flip(){
         this.reverse();
@@ -46,9 +58,10 @@ class Segs extends List {
 
     trans(transVec){
         for (let seg of this){
+            console.log('yay');
             seg.head.iadd(transVec);
         }
-        seg.last().tail.iadd(transVec);
+        this.last().tail.iadd(transVec);
     }
 
     rotate(angle){
@@ -90,6 +103,35 @@ class Segs extends List {
         };
     }
 
+    cutEnter(ithSeg, ratio){
+        let seg = this[ithSeg],
+            lerp = seg.lerp(ratio),
+            succ = new Seg(lerp, seg.tail);
+
+        seg.tail = lerp;
+        this.splice(ithSeg+1, 0, succ);
+        console.log(this, 'cutpoint');
+    }
+
+    cutGoing(ithSeg, point){
+        let seg = this[ithSeg];
+        this.splice(ithSeg, 0, new Seg(seg.head, point), new Seg(point, seg.head));
+    }
+
+    cutLeave(notchTip, ithSeg, ratio){
+
+        // 1. the leaving point is created over the ith segment
+        //    by this moment, the tail of the ith seg or the head
+        //    of the ith+1 seg is the leaving point.
+        this.cutEnter(ithSeg, ratio);
+        // 2. make the current notch tip reach the leaving point
+        //    NOTE that the actual tip point is the tail of notchTip.
+        this.cutGoing(notchTip, this[ithSeg].tail);
+
+        let result = new List(this.slice(notchTip+1, ithSeg+3), this.slice(1, notchTip+1).concat(this.slice(ithSeg+3)));
+        return result;
+    }
+
     torque(){
         let product = new Vec();
         for (let seg of this){
@@ -100,20 +142,13 @@ class Segs extends List {
 
         return new Torque({center, mass});
     }
-}
 
-if (!PRODUCTION){
-    let len  = 10;
-    let vecsCricle = Array(len).fill(0).map((e, i) => (new Vec(i/len*360)).mult(0.5));
-
-    let vecsLine = Array(len).fill(0).map((e, i)=> new Vec( i/(len-1)*0.6 - 0.3, 0) );
-
-    let segs1 = new Segs(vecsCricle),
-        segs2 = new Segs(vecsCricle);
-
-    segs1.flip();
-    console.assert(segs1[0].head === segs2.last().tail, 'Segs: flip error');
-
-    let segsLine = new Segs(vecsLine);
-    // console.log(segsLine.torque().center);
+    copy(){
+        // console.log(this);
+        let segs = this.map(seg => seg.copy ? seg.copy() : seg);
+        for (let i = 0; i < segs.length - 1; i++){
+            segs[i].tail = segs[i+1].head;
+        }
+        return segs;
+    }
 }
