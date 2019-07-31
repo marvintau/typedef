@@ -48,6 +48,10 @@ export default class Vec{
         
     }
 
+    equal(vec){
+        return this.x === vec.x && this.y === vec.y;
+    }
+
     /**
      * 
      * @param {Vec} vec another vec to be added
@@ -170,6 +174,10 @@ export default class Vec{
      */
     cross(that){
         return this.x * that.y - that.x * this.y;
+    }
+
+    dot(that){
+        return this.x * that.x + this.y * that.y;
     }
  
     mag(){

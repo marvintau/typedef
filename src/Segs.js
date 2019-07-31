@@ -6,6 +6,12 @@ export default class Segs extends List {
         super(...segs);
     }
 
+    conn(){
+        for (let i = 0; i < this.length - 1; i++){
+            this[i+1].head = this[i].tail;
+        }
+    }
+
     // torque calculation will be added here.
 
     fromVecs(vecs){
@@ -103,32 +109,31 @@ export default class Segs extends List {
         };
     }
 
-    cutEnter(ithSeg, ratio){
-        let seg = this[ithSeg],
-            lerp = seg.lerp(ratio),
-            succ = new Seg(lerp, seg.tail);
+    cutEnter(notch, ratio){
+        
+        let seg = this[notch],
+            lerp = seg.lerp(ratio);
 
         seg.tail = lerp;
-        this.splice(ithSeg+1, 0, succ);
-        console.log(this, 'cutpoint');
+        this.splice(notch+1, 0, new Seg(lerp, seg.tail));
     }
 
-    cutGoing(ithSeg, point){
-        let seg = this[ithSeg];
-        this.splice(ithSeg, 0, new Seg(seg.head, point), new Seg(point, seg.head));
+    cutGoing(notchPrev, point){
+        let seg = this[notchPrev];
+        this.splice(notchPrev+1, 0, new Seg(seg.tail, point), new Seg(point, seg.tail));
     }
 
-    cutLeave(notchTip, ithSeg, ratio){
+    cutLeave(notchPrev, splitPrev){
 
-        // 1. the leaving point is created over the ith segment
-        //    by this moment, the tail of the ith seg or the head
-        //    of the ith+1 seg is the leaving point.
-        this.cutEnter(ithSeg, ratio);
-        // 2. make the current notch tip reach the leaving point
-        //    NOTE that the actual tip point is the tail of notchTip.
-        this.cutGoing(notchTip, this[ithSeg].tail);
+        let result = [];
+        if (notchPrev < splitPrev){
+            console.log('notch - split - 0')
+            result = new List(this.slice(notchPrev, splitPrev), this.slice(0, notchPrev+1).concat(this.slice(splitPrev)));
+        } else if (notchPrev > splitPrev){
+            console.log('notch - 0 - split')
+            result = new List(this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev));
+        } else throw Error('its impossible to have same notchPrev and splitPrev', notchPrev, splitPrev);
 
-        let result = new List(this.slice(notchTip+1, ithSeg+3), this.slice(1, notchTip+1).concat(this.slice(ithSeg+3)));
         return result;
     }
 

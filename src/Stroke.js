@@ -26,8 +26,4 @@ export default class Stroke {
         ctx.restore();
     }
 
-    cut(poly){
-        // 1. test if the head of the stroke is inside of any
-
-    }
 }

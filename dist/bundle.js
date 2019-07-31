@@ -108,10 +108,10 @@ CanvasRenderingContext2D.prototype.bezierCurveTo = function (cv1, cv2, ev) {
 CanvasRenderingContext2D.prototype.point = function (v) {
   if (v != undefined) {
     let dpr = window.devicePixelRatio,
-        ratio = this.canvas.height / dpr;
+        ratio = this.canvas.height / 2 / dpr;
     this.beginPath();
-    this.arc(v.x * ratio, v.y * ratio, 3, 0, Math.PI * 2);
-    this.stroke();
+    this.arc(v.x * ratio, v.y * ratio, 1.8, 0, Math.PI * 2);
+    this.fill();
   }
 };
 
@@ -199,6 +199,10 @@ __webpack_require__.r(__webpack_exports__);
 class List extends Array {
   constructor(...args) {
     super(...args);
+  }
+
+  most() {
+    return this.slice(0, -1);
   }
 
   last() {
@@ -298,40 +302,75 @@ function testPoly() {
   console.log(poly);
   poly.shrink(0.05, ctx); // polyCopy.draw(ctx);
   // poly.draw(ctx);
-}
+} // testPoly();
 
-testPoly();
 
-function testStroke() {
-  let len = 15;
-  let vecsCricle = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.5));
-  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / (6 - 1) * 2 - 1, 0.3));
+function testShrink() {
+  let len = 12;
+  let vecsCricle = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.5));
+  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / (6 - 1) * 2 - 1, 0.3)); // let poly1 = new Poly([(new Segs(0).fromVecs(vecsCricle))]);
+
   let stroke1 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsCricle), true),
       stroke2 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsLine));
   let enter = 3;
   stroke1.segs.cutEnter(enter, 0.5);
-  stroke1.segs.cutGoing(enter + 1, new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0, 0));
+  stroke1.segs.cutGoing(enter + 1, new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.1, 0));
   stroke1.segs.cutGoing(enter + 2, new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.1, 0));
-  let cuts = stroke1.segs.cutLeave(enter + 3, 15, 0.5);
+  let cuts = stroke1.segs.cutLeave(enter + 3, 14, 0.5);
   console.log(cuts[0].map(e => e.head), 'cutresult');
   let poly1 = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"](new _List__WEBPACK_IMPORTED_MODULE_2__["default"](cuts[0])),
-      poly2 = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"](new _List__WEBPACK_IMPORTED_MODULE_2__["default"](cuts[1]));
+      poly2 = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"](new _List__WEBPACK_IMPORTED_MODULE_2__["default"](cuts[1])),
+      poly3,
+      poly4;
   poly1 = poly1.copy();
-  poly2 = poly2.copy(); // poly1.shrink(0.5);
-  // poly2.shrink(0.5);
-  // poly1.trans(new Vec(0.1, -0.1));
-
-  poly2.trans(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.1, -0.2));
+  poly2 = poly2.copy();
+  poly1.trans(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.15, 0.1));
+  poly2.trans(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.15, -0.1));
+  poly3 = poly1.copy();
+  poly4 = poly2.copy();
+  poly1.shrink(0.05);
+  poly2.shrink(0.05);
+  console.log(poly1, poly2);
   poly1.draw(ctx, true);
-  poly2.draw(ctx, true); // stroke1.draw(ctx);
+  poly2.draw(ctx, true);
+  poly3.draw(ctx);
+  poly4.draw(ctx); // stroke1.draw(ctx);
   // stroke2.draw(ctx);
   // segs1.flip();
   // console.assert(segs1[0].head === segs2.last().tail, 'Segs: flip error');
 
   let segsLine = new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](vecsLine); // console.log(segsLine.torque().center);
+} // testShrink();
+
+
+function testCut() {
+  let len = 12;
+  let vecsCricle = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.5));
+  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / (6 - 1) - 1, 0.15 + i * 0.01));
+  let poly = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"]([new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsCricle)]),
+      stroke = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsLine));
+  let {
+    left,
+    right
+  } = poly.cut(stroke);
+  left = left.copy();
+  right = right.copy();
+  let mult = -2.4;
+  let shratio = -0.03;
+  left.trans(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0, 0.1 * mult));
+  right.trans(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0, -0.1 * mult));
+  let leftC = left.copy();
+  let rightC = right.copy();
+  leftC.shrink(shratio);
+  rightC.shrink(shratio);
+  left.draw(ctx, true);
+  right.draw(ctx, true, '#34567888');
+  leftC.draw(ctx, true);
+  rightC.draw(ctx, true, '#34567888');
+  stroke.draw(ctx);
 }
 
-testStroke();
+testCut();
 
 /***/ }),
 
@@ -350,36 +389,38 @@ __webpack_require__.r(__webpack_exports__);
 
 
 class Poly {
-  constructor(contours = new _List__WEBPACK_IMPORTED_MODULE_0__["default"](0)) {
+  constructor(contours = new Segs(0)) {
     this.contours = contours;
     this.close();
   }
 
   close() {
     for (let contour of this.contours) {
-      if (contour.last().tail !== contour[0].head) {
+      if (!contour.last().tail.equal(contour[0].head)) {
         let conn = new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](contour.last().tail, contour[0].head);
         contour.push(conn);
+      } else {
+        contour.last().tail = contour[0].head;
       }
     }
   }
 
   copy() {
-    let poly = new Poly(this.contours.copy());
-    poly.close();
+    let poly = new Poly(this.contours.copy()); // poly.close();
+
     return poly;
   }
 
   trans(vec) {
     for (let contour of this.contours) {
       contour.trans(vec);
-      contour.last().tail.iadd(vec.neg()); // contour.last().tail.iadd(vec.neg());
+      contour.last().tail.iadd(vec.neg());
     }
   }
 
-  draw(ctx, stroke) {
+  draw(ctx, stroke, color = 'rgb(0, 0, 0, 0.1)') {
     ctx.strokeStyle = 'black';
-    ctx.fillStyle = 'rgb(0, 0, 0, 0.1)';
+    ctx.fillStyle = color;
     ctx.beginPath();
     ctx.drawContours(this.contours);
     ctx.fill();
@@ -389,7 +430,8 @@ class Poly {
 
     for (let contour of this.contours) {
       for (let [index, seg] of contour.entries()) {
-        ctx.text(index, seg.head);
+        // ctx.text(index, seg.head);
+        ctx.point(seg.head);
       }
     }
 
@@ -416,6 +458,54 @@ class Poly {
         contour[j].head.iadd(bisecs[i][j]);
       }
     }
+  }
+
+  cut(stroke) {
+    let state = 'outside',
+        notchPrev,
+        splitPrev,
+        res = undefined;
+
+    for (let i = 0; i < stroke.segs.length; i++) {
+      let strokeSeg = stroke.segs[i]; // this will also include the leaving segment over the stroke.
+
+      if (state === 'inside') {
+        this.contours[0].cutGoing(notchPrev, strokeSeg.head);
+        notchPrev += 1;
+      }
+
+      for (let j = 0; j < this.contours[0].length; j++) {
+        let {
+          t,
+          u
+        } = strokeSeg.intersect(this.contours[0][j]);
+
+        if (t < 1 && t > 0 && u < 1 && u > 0) {
+          if (state == 'outside') {
+            notchPrev = j;
+            this.contours[0].cutEnter(notchPrev, u);
+            state = 'inside';
+            console.log('entered');
+            break;
+          } else if (state == 'inside') {
+            // create the cut-through point over j. notchPrev shifts
+            // if greater than j.
+            splitPrev = j;
+            this.contours[0].cutEnter(splitPrev, u);
+            notchPrev += notchPrev > splitPrev ? 1 : 0;
+            res = this.contours[0].cutLeave(notchPrev + 1, splitPrev + 1);
+            state = 'outside';
+          }
+        }
+      }
+    }
+
+    let [left, right] = res;
+    console.log(left, right, 'cut');
+    return {
+      left: new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](left)),
+      right: new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](right))
+    };
   }
 
 }
@@ -518,7 +608,16 @@ class Seg {
     if (that.head == this.tail) {
       let thisDir = this.dir().neg(),
           thatDir = that.dir();
-      return thisDir.add(thatDir).mult(Math.sign(thisDir.cross(thatDir))).norm();
+
+      if (thisDir.cross(thatDir) === 0) {
+        if (thisDir.dot(thatDir) > 0) {
+          return thisDir;
+        } else {
+          return new _Vec__WEBPACK_IMPORTED_MODULE_0__["default"](-thisDir.y, thisDir.x);
+        }
+      } else {
+        return thisDir.add(thatDir).mult(Math.sign(thisDir.cross(thatDir))).norm();
+      }
     } else console.error('angleBisector is only permitted if two segs share same vec', this, that);
   }
 
@@ -553,6 +652,12 @@ __webpack_require__.r(__webpack_exports__);
 class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
   constructor(...segs) {
     super(...segs);
+  }
+
+  conn() {
+    for (let i = 0; i < this.length - 1; i++) {
+      this[i + 1].head = this[i].tail;
+    }
   } // torque calculation will be added here.
 
 
@@ -663,29 +768,29 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
     };
   }
 
-  cutEnter(ithSeg, ratio) {
-    let seg = this[ithSeg],
-        lerp = seg.lerp(ratio),
-        succ = new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](lerp, seg.tail);
+  cutEnter(notch, ratio) {
+    let seg = this[notch],
+        lerp = seg.lerp(ratio);
     seg.tail = lerp;
-    this.splice(ithSeg + 1, 0, succ);
-    console.log(this, 'cutpoint');
+    this.splice(notch + 1, 0, new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](lerp, seg.tail));
   }
 
-  cutGoing(ithSeg, point) {
-    let seg = this[ithSeg];
-    this.splice(ithSeg, 0, new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](seg.head, point), new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](point, seg.head));
+  cutGoing(notchPrev, point) {
+    let seg = this[notchPrev];
+    this.splice(notchPrev + 1, 0, new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](seg.tail, point), new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](point, seg.tail));
   }
 
-  cutLeave(notchTip, ithSeg, ratio) {
-    // 1. the leaving point is created over the ith segment
-    //    by this moment, the tail of the ith seg or the head
-    //    of the ith+1 seg is the leaving point.
-    this.cutEnter(ithSeg, ratio); // 2. make the current notch tip reach the leaving point
-    //    NOTE that the actual tip point is the tail of notchTip.
+  cutLeave(notchPrev, splitPrev) {
+    let result = [];
 
-    this.cutGoing(notchTip, this[ithSeg].tail);
-    let result = new _List__WEBPACK_IMPORTED_MODULE_0__["default"](this.slice(notchTip + 1, ithSeg + 3), this.slice(1, notchTip + 1).concat(this.slice(ithSeg + 3)));
+    if (notchPrev < splitPrev) {
+      console.log('notch - split - 0');
+      result = new _List__WEBPACK_IMPORTED_MODULE_0__["default"](this.slice(notchPrev, splitPrev), this.slice(0, notchPrev + 1).concat(this.slice(splitPrev)));
+    } else if (notchPrev > splitPrev) {
+      console.log('notch - 0 - split');
+      result = new _List__WEBPACK_IMPORTED_MODULE_0__["default"](this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev));
+    } else throw Error('its impossible to have same notchPrev and splitPrev', notchPrev, splitPrev);
+
     return result;
   }
 
@@ -757,9 +862,6 @@ class Stroke {
     ctx.restore();
   }
 
-  cut(poly) {// 1. test if the head of the stroke is inside of any
-  }
-
 }
 
 /***/ }),
@@ -812,6 +914,10 @@ class Vec {
       this.x = x;
       this.y = y;
     }
+  }
+
+  equal(vec) {
+    return this.x === vec.x && this.y === vec.y;
   }
   /**
    * 
@@ -940,6 +1046,10 @@ class Vec {
 
   cross(that) {
     return this.x * that.y - that.x * this.y;
+  }
+
+  dot(that) {
+    return this.x * that.x + this.y * that.y;
   }
 
   mag() {

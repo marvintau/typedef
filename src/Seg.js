@@ -81,7 +81,16 @@ export default class Seg {
             let thisDir = this.dir().neg(),
                 thatDir = that.dir();
 
-            return thisDir.add(thatDir).mult(Math.sign(thisDir.cross(thatDir))).norm();
+            if(thisDir.cross(thatDir) === 0){
+                if (thisDir.dot(thatDir) > 0){
+                    return thisDir;
+                } else {
+                    return new Vec(-thisDir.y, thisDir.x);
+                }
+            } else {
+                return thisDir.add(thatDir).mult(Math.sign(thisDir.cross(thatDir))).norm();
+            }
+
 
         } else console.error('angleBisector is only permitted if two segs share same vec', this, that);
     }

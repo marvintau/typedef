@@ -5,6 +5,10 @@ export default class List extends Array {
         super(...args);
     }
 
+    most(){
+        return this.slice(0, -1);
+    }
+
     last(){
         return this[this.length - 1];
     }

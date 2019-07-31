@@ -40,35 +40,43 @@ function testPoly(){
     // polyCopy.draw(ctx);
     // poly.draw(ctx);
 }
-testPoly();
+// testPoly();
 
-function testStroke(){
-    let len  = 15;
-    let vecsCricle = Array(len).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5));
+function testShrink(){
+    let len  = 12;
+    let vecsCricle =(new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5));
     let vecsLine = Array(len).fill(0).map((e, i)=> new Vec( i/(6-1)*2 - 1, 0.3) );
+
+    // let poly1 = new Poly([(new Segs(0).fromVecs(vecsCricle))]);
 
     let stroke1 = new Stroke((new Segs(0)).fromVecs(vecsCricle), true),
         stroke2 = new Stroke(new Segs(0).fromVecs(vecsLine));
 
     let enter = 3;
     stroke1.segs.cutEnter(enter, 0.5);
-    stroke1.segs.cutGoing(enter+1, new Vec(0, 0));
+    stroke1.segs.cutGoing(enter+1, new Vec(0.1, 0));
     stroke1.segs.cutGoing(enter+2, new Vec(-0.1, 0));
-    let cuts = stroke1.segs.cutLeave(enter+3, 15, 0.5);
+    let cuts = stroke1.segs.cutLeave(enter+3, 14, 0.5);
     console.log(cuts[0].map(e=>e.head),'cutresult');
     let poly1 = new Poly(new List(cuts[0])),
-        poly2 = new Poly(new List(cuts[1]));
+        poly2 = new Poly(new List(cuts[1])),
+        poly3, poly4;
 
 
     poly1 = poly1.copy();
     poly2 = poly2.copy();
-    // poly1.shrink(0.5);
-    // poly2.shrink(0.5);
-    // poly1.trans(new Vec(0.1, -0.1));
-    poly2.trans(new Vec(0.1, -0.2));
+    poly1.trans(new Vec(-0.15, 0.1));
+    poly2.trans(new Vec(0.15, -0.1));
+    poly3 = poly1.copy();
+    poly4 = poly2.copy();
+    poly1.shrink(0.05);
+    poly2.shrink(0.05);
 
+    console.log(poly1, poly2);
     poly1.draw(ctx, true);
     poly2.draw(ctx, true);
+    poly3.draw(ctx);
+    poly4.draw(ctx);
 
     // stroke1.draw(ctx);
     // stroke2.draw(ctx);
@@ -79,4 +87,35 @@ function testStroke(){
     let segsLine = new Segs(vecsLine);
     // console.log(segsLine.torque().center);
 }
-testStroke();
+// testShrink();
+
+function testCut(){
+
+    let len  = 12;
+    let vecsCricle =(new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5));
+    let vecsLine = Array(len).fill(0).map((e, i)=> new Vec( i/(6-1) - 1,0.15+i*0.01) );
+
+    let poly = new Poly([(new Segs(0).fromVecs(vecsCricle))]),
+        stroke = new Stroke(new Segs(0).fromVecs(vecsLine));
+
+    let {left, right} = poly.cut(stroke);
+    left = left.copy();
+    right = right.copy();
+
+    let mult = -2.4;
+    let shratio = -0.03;
+    left.trans(new Vec(0, 0.1*mult));
+    right.trans(new Vec(0, -0.1*mult));
+    let leftC = left.copy();
+    let rightC = right.copy();
+    leftC.shrink(shratio);
+    rightC.shrink(shratio);
+    left.draw(ctx, true);
+    right.draw(ctx, true, '#34567888');
+    leftC.draw(ctx, true);
+    rightC.draw(ctx, true, '#34567888');
+    stroke.draw(ctx);
+    
+    
+}
+testCut();

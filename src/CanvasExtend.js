@@ -15,11 +15,11 @@ CanvasRenderingContext2D.prototype.point = function(v){
 
     if (v != undefined){
         let dpr = window.devicePixelRatio,
-            ratio = this.canvas.height/dpr;
+            ratio = this.canvas.height/2/dpr;
     
         this.beginPath()
-        this.arc(v.x*ratio, v.y*ratio, 3, 0, Math.PI*2);
-        this.stroke();
+        this.arc(v.x*ratio, v.y*ratio, 1.8, 0, Math.PI*2);
+        this.fill();
     }
 }
 
