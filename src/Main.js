@@ -44,12 +44,12 @@ function testPoly(){
 
 function testShrink(){
     let len  = 12;
-    let vecsCricle =(new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5));
+    let vecsCircle =(new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5));
     let vecsLine = Array(len).fill(0).map((e, i)=> new Vec( i/(6-1)*2 - 1, 0.3) );
 
-    // let poly1 = new Poly([(new Segs(0).fromVecs(vecsCricle))]);
+    // let poly1 = new Poly([(new Segs(0).fromVecs(vecsCircle))]);
 
-    let stroke1 = new Stroke((new Segs(0)).fromVecs(vecsCricle), true),
+    let stroke1 = new Stroke((new Segs(0)).fromVecs(vecsCircle), true),
         stroke2 = new Stroke(new Segs(0).fromVecs(vecsLine));
 
     let enter = 3;
@@ -92,28 +92,27 @@ function testShrink(){
 function testCut(){
 
     let len  = 12;
-    let vecsCricle =(new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5));
-    let vecsLine = Array(len).fill(0).map((e, i)=> new Vec( i/(6-1) - 1,0.15+i*0.01) );
+    let vecsCircle =(new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5)),
+        innerCircle = (new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.3));
+    let vecsLine = Array(len).fill(0).map((e, i)=> new Vec( 1-i/(6-1),0.15+i*0.01) );
 
-    let poly = new Poly([(new Segs(0).fromVecs(vecsCricle))]),
+    vecsCircle = new Segs(0).fromVecs(vecsCircle);
+    innerCircle = new Segs(0).fromVecs(innerCircle);
+    innerCircle.flip();
+
+    let poly = new Poly([vecsCircle, innerCircle]),
         stroke = new Stroke(new Segs(0).fromVecs(vecsLine));
 
-    let {left, right} = poly.cut(stroke);
-    left = left.copy();
-    right = right.copy();
+    poly.draw(ctx, true);
 
-    let mult = -2.4;
-    let shratio = -0.03;
-    left.trans(new Vec(0, 0.1*mult));
-    right.trans(new Vec(0, -0.1*mult));
-    let leftC = left.copy();
-    let rightC = right.copy();
-    leftC.shrink(shratio);
-    rightC.shrink(shratio);
-    left.draw(ctx, true);
-    right.draw(ctx, true, '#34567888');
-    leftC.draw(ctx, true);
-    rightC.draw(ctx, true, '#34567888');
+    let res = poly.cut(stroke);
+    let shratio = -0.025;
+    for (let cutPoly of res){
+        cutPoly = cutPoly.copy();
+        cutPoly.shrink(shratio);
+        cutPoly.draw(ctx, false, '#34567888');
+    }
+
     stroke.draw(ctx);
     
     

@@ -123,18 +123,23 @@ export default class Segs extends List {
         this.splice(notchPrev+1, 0, new Seg(seg.tail, point), new Seg(point, seg.tail));
     }
 
-    cutLeave(notchPrev, splitPrev){
+    cutThrough(notchPrev, splitPrev){
 
         let result = [];
         if (notchPrev < splitPrev){
             console.log('notch - split - 0')
-            result = new List(this.slice(notchPrev, splitPrev), this.slice(0, notchPrev+1).concat(this.slice(splitPrev)));
+            result = [this.slice(notchPrev, splitPrev), this.slice(0, notchPrev+1).concat(this.slice(splitPrev))];
         } else if (notchPrev > splitPrev){
             console.log('notch - 0 - split')
-            result = new List(this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev));
+            result = [this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev)];
         } else throw Error('its impossible to have same notchPrev and splitPrev', notchPrev, splitPrev);
 
         return result;
+    }
+
+    cutThroughRing(notchPrev, splitPrev, ringSegs){
+        let splittedRingSegs = [...ringSegs.slice(splitPrev), ...ringSegs.slice(0, splitPrev+1)];
+        return new Segs(...[...this.slice(0, notchPrev), ...splittedRingSegs, ...this.slice(notchPrev)]);
     }
 
     torque(){

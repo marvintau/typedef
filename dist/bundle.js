@@ -307,10 +307,10 @@ function testPoly() {
 
 function testShrink() {
   let len = 12;
-  let vecsCricle = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.5));
-  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / (6 - 1) * 2 - 1, 0.3)); // let poly1 = new Poly([(new Segs(0).fromVecs(vecsCricle))]);
+  let vecsCircle = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.5));
+  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / (6 - 1) * 2 - 1, 0.3)); // let poly1 = new Poly([(new Segs(0).fromVecs(vecsCircle))]);
 
-  let stroke1 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsCricle), true),
+  let stroke1 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsCircle), true),
       stroke2 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsLine));
   let enter = 3;
   stroke1.segs.cutEnter(enter, 0.5);
@@ -345,28 +345,24 @@ function testShrink() {
 
 function testCut() {
   let len = 12;
-  let vecsCricle = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.5));
-  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / (6 - 1) - 1, 0.15 + i * 0.01));
-  let poly = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"]([new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsCricle)]),
+  let vecsCircle = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.5)),
+      innerCircle = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.3));
+  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](1 - i / (6 - 1), 0.15 + i * 0.01));
+  vecsCircle = new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsCircle);
+  innerCircle = new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(innerCircle);
+  innerCircle.flip();
+  let poly = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"]([vecsCircle, innerCircle]),
       stroke = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsLine));
-  let {
-    left,
-    right
-  } = poly.cut(stroke);
-  left = left.copy();
-  right = right.copy();
-  let mult = -2.4;
-  let shratio = -0.03;
-  left.trans(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0, 0.1 * mult));
-  right.trans(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0, -0.1 * mult));
-  let leftC = left.copy();
-  let rightC = right.copy();
-  leftC.shrink(shratio);
-  rightC.shrink(shratio);
-  left.draw(ctx, true);
-  right.draw(ctx, true, '#34567888');
-  leftC.draw(ctx, true);
-  rightC.draw(ctx, true, '#34567888');
+  poly.draw(ctx, true);
+  let res = poly.cut(stroke);
+  let shratio = -0.025;
+
+  for (let cutPoly of res) {
+    cutPoly = cutPoly.copy();
+    cutPoly.shrink(shratio);
+    cutPoly.draw(ctx, false, '#34567888');
+  }
+
   stroke.draw(ctx);
 }
 
@@ -396,6 +392,8 @@ class Poly {
 
   close() {
     for (let contour of this.contours) {
+      console.log(contour);
+
       if (!contour.last().tail.equal(contour[0].head)) {
         let conn = new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](contour.last().tail, contour[0].head);
         contour.push(conn);
@@ -426,12 +424,14 @@ class Poly {
     ctx.fill();
     if (stroke) ctx.stroke();
     ctx.save();
-    ctx.fillStyle = 'rgb(0, 0, 0, 0.5)';
 
-    for (let contour of this.contours) {
-      for (let [index, seg] of contour.entries()) {
-        // ctx.text(index, seg.head);
-        ctx.point(seg.head);
+    if (stroke) {
+      ctx.fillStyle = 'rgb(0, 0, 0, 0.5)';
+
+      for (let contour of this.contours) {
+        for (let [index, seg] of contour.entries()) {
+          ctx.text(index, seg.head); // ctx.point(seg.head);
+        }
       }
     }
 
@@ -460,52 +460,70 @@ class Poly {
     }
   }
 
-  cut(stroke) {
+  cut(cutterStroke) {
     let state = 'outside',
+        enteredContour,
         notchPrev,
         splitPrev,
-        res = undefined;
+        res = [];
 
-    for (let i = 0; i < stroke.segs.length; i++) {
-      let strokeSeg = stroke.segs[i]; // this will also include the leaving segment over the stroke.
+    for (let cutterIndex = 0; cutterIndex < cutterStroke.segs.length; cutterIndex++) {
+      let cutterSeg = cutterStroke.segs[cutterIndex]; // this will also include the leaving segment over the stroke, no matter
+      // what type of next contour it is (it could be on same contour or not).
 
       if (state === 'inside') {
-        this.contours[0].cutGoing(notchPrev, strokeSeg.head);
+        let currContourIndex = enteredContour;
+        this.contours[currContourIndex].cutGoing(notchPrev, cutterSeg.head);
         notchPrev += 1;
-      }
+      } // check when multiple contour exists.
 
-      for (let j = 0; j < this.contours[0].length; j++) {
-        let {
-          t,
-          u
-        } = strokeSeg.intersect(this.contours[0][j]);
 
-        if (t < 1 && t > 0 && u < 1 && u > 0) {
-          if (state == 'outside') {
-            notchPrev = j;
-            this.contours[0].cutEnter(notchPrev, u);
-            state = 'inside';
-            console.log('entered');
-            break;
-          } else if (state == 'inside') {
-            // create the cut-through point over j. notchPrev shifts
-            // if greater than j.
-            splitPrev = j;
-            this.contours[0].cutEnter(splitPrev, u);
-            notchPrev += notchPrev > splitPrev ? 1 : 0;
-            res = this.contours[0].cutLeave(notchPrev + 1, splitPrev + 1);
-            state = 'outside';
+      for (let contourIndex = 0; contourIndex < this.contours.length; contourIndex++) {
+        let currContour = this.contours[contourIndex];
+
+        for (let contourSegIndex = 0; contourSegIndex < currContour.length; contourSegIndex++) {
+          let {
+            t,
+            u
+          } = cutterSeg.intersect(currContour[contourSegIndex]);
+
+          if (t < 1 && t > 0 && u < 1 && u > 0) {
+            if (state == 'outside') {
+              // if the state is outside, and an intersection between
+              // the cutter segment and polygon contour is detected,
+              // save the current contour index
+              enteredContour = contourIndex;
+              notchPrev = contourSegIndex;
+              currContour.cutEnter(notchPrev, u);
+              state = 'inside';
+              console.log('entered');
+              break;
+            } else if (state == 'inside') {
+              // if the current state is inside, and an interdsection is
+              // detected, then we need to discuss whether the cutter has
+              // cut through the shape, or a ring is encountered.
+              if (enteredContour === contourIndex) {
+                // we are cutting through the shape.
+                splitPrev = contourSegIndex;
+                currContour.cutEnter(splitPrev, u);
+                notchPrev += notchPrev > splitPrev ? 1 : 0;
+                state = 'outside';
+                let [left, right] = currContour.cutThrough(notchPrev + 1, splitPrev + 1);
+                return [new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](left)), new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](right))];
+              } else {
+                // cutting a different contour, which means we encounter
+                // a ring.
+                splitPrev = contourSegIndex;
+                currContour.cutEnter(splitPrev, u);
+                state = 'outside';
+                let res = this.contours[enteredContour].cutThroughRing(notchPrev + 1, splitPrev + 1, currContour);
+                return [new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](res))];
+              }
+            }
           }
         }
       }
     }
-
-    let [left, right] = res;
-    console.log(left, right, 'cut');
-    return {
-      left: new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](left)),
-      right: new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](right))
-    };
   }
 
 }
@@ -780,18 +798,23 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
     this.splice(notchPrev + 1, 0, new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](seg.tail, point), new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](point, seg.tail));
   }
 
-  cutLeave(notchPrev, splitPrev) {
+  cutThrough(notchPrev, splitPrev) {
     let result = [];
 
     if (notchPrev < splitPrev) {
       console.log('notch - split - 0');
-      result = new _List__WEBPACK_IMPORTED_MODULE_0__["default"](this.slice(notchPrev, splitPrev), this.slice(0, notchPrev + 1).concat(this.slice(splitPrev)));
+      result = [this.slice(notchPrev, splitPrev), this.slice(0, notchPrev + 1).concat(this.slice(splitPrev))];
     } else if (notchPrev > splitPrev) {
       console.log('notch - 0 - split');
-      result = new _List__WEBPACK_IMPORTED_MODULE_0__["default"](this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev));
+      result = [this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev)];
     } else throw Error('its impossible to have same notchPrev and splitPrev', notchPrev, splitPrev);
 
     return result;
+  }
+
+  cutThroughRing(notchPrev, splitPrev, ringSegs) {
+    let splittedRingSegs = [...ringSegs.slice(splitPrev), ...ringSegs.slice(0, splitPrev + 1)];
+    return new Segs(...[...this.slice(0, notchPrev), ...splittedRingSegs, ...this.slice(notchPrev)]);
   }
 
   torque() {
