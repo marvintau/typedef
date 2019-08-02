@@ -352,10 +352,12 @@ function testCut() {
   innerCircle = new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(innerCircle);
   innerCircle.flip();
   let poly = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"]([vecsCircle, innerCircle]),
-      stroke = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsLine));
+      stroke = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsLine)); // poly.trans(new Vec(0, -0.4));
+
   poly.draw(ctx, true);
-  let res = poly.cut(stroke);
-  let shratio = -0.025;
+  let res = stroke.cut(poly);
+  let shratio = -0.015;
+  console.log(res);
 
   for (let cutPoly of res) {
     cutPoly = cutPoly.copy();
@@ -456,72 +458,6 @@ class Poly {
 
       for (let j = 0; j < contour.length; j++) {
         contour[j].head.iadd(bisecs[i][j]);
-      }
-    }
-  }
-
-  cut(cutterStroke) {
-    let state = 'outside',
-        enteredContour,
-        notchPrev,
-        splitPrev,
-        res = [];
-
-    for (let cutterIndex = 0; cutterIndex < cutterStroke.segs.length; cutterIndex++) {
-      let cutterSeg = cutterStroke.segs[cutterIndex]; // this will also include the leaving segment over the stroke, no matter
-      // what type of next contour it is (it could be on same contour or not).
-
-      if (state === 'inside') {
-        let currContourIndex = enteredContour;
-        this.contours[currContourIndex].cutGoing(notchPrev, cutterSeg.head);
-        notchPrev += 1;
-      } // check when multiple contour exists.
-
-
-      for (let contourIndex = 0; contourIndex < this.contours.length; contourIndex++) {
-        let currContour = this.contours[contourIndex];
-
-        for (let contourSegIndex = 0; contourSegIndex < currContour.length; contourSegIndex++) {
-          let {
-            t,
-            u
-          } = cutterSeg.intersect(currContour[contourSegIndex]);
-
-          if (t < 1 && t > 0 && u < 1 && u > 0) {
-            if (state == 'outside') {
-              // if the state is outside, and an intersection between
-              // the cutter segment and polygon contour is detected,
-              // save the current contour index
-              enteredContour = contourIndex;
-              notchPrev = contourSegIndex;
-              currContour.cutEnter(notchPrev, u);
-              state = 'inside';
-              console.log('entered');
-              break;
-            } else if (state == 'inside') {
-              // if the current state is inside, and an interdsection is
-              // detected, then we need to discuss whether the cutter has
-              // cut through the shape, or a ring is encountered.
-              if (enteredContour === contourIndex) {
-                // we are cutting through the shape.
-                splitPrev = contourSegIndex;
-                currContour.cutEnter(splitPrev, u);
-                notchPrev += notchPrev > splitPrev ? 1 : 0;
-                state = 'outside';
-                let [left, right] = currContour.cutThrough(notchPrev + 1, splitPrev + 1);
-                return [new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](left)), new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](right))];
-              } else {
-                // cutting a different contour, which means we encounter
-                // a ring.
-                splitPrev = contourSegIndex;
-                currContour.cutEnter(splitPrev, u);
-                state = 'outside';
-                let res = this.contours[enteredContour].cutThroughRing(notchPrev + 1, splitPrev + 1, currContour);
-                return [new Poly(new _List__WEBPACK_IMPORTED_MODULE_0__["default"](res))];
-              }
-            }
-          }
-        }
       }
     }
   }
@@ -858,6 +794,10 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Stroke; });
 /* harmony import */ var _Seg__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Seg */ "./src/Seg.js");
+/* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./List */ "./src/List.js");
+/* harmony import */ var _Poly__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Poly */ "./src/Poly.js");
+
+
 
 class Stroke {
   constructor(segList, closed) {
@@ -883,6 +823,85 @@ class Stroke {
     }
 
     ctx.restore();
+  }
+
+  cut(poly) {
+    let state = 'outside',
+        enteredContour,
+        notchPrev,
+        splitPrev,
+        candidates = [poly],
+        res = [];
+
+    while (candidates.length > 0) polygonCandidateIteration: {
+      console.log(candidates.length);
+      let currPoly = candidates.pop();
+
+      for (let cutterIndex = 0; cutterIndex < this.segs.length; cutterIndex++) {
+        let cutterSeg = this.segs[cutterIndex]; // this will also include the leaving segment over the stroke, no matter
+        // what type of next contour it is (it could be on same contour or not).
+
+        if (state === 'inside') {
+          let currContourIndex = enteredContour;
+          currPoly.contours[currContourIndex].cutGoing(notchPrev, cutterSeg.head);
+          notchPrev += 1;
+        } // check when multiple contour exists.
+
+
+        for (let contourIndex = 0; contourIndex < currPoly.contours.length; contourIndex++) {
+          let currContour = currPoly.contours[contourIndex];
+
+          for (let contourSegIndex = 0; contourSegIndex < currContour.length; contourSegIndex++) {
+            let {
+              t,
+              u
+            } = cutterSeg.intersect(currContour[contourSegIndex]);
+
+            if (t < 1 && t > 0 && u < 1 && u > 0) {
+              if (state == 'outside') {
+                // if the state is outside, and an intersection between
+                // the cutter segment and polygon contour is detected,
+                // save the current contour index
+                enteredContour = contourIndex;
+                notchPrev = contourSegIndex;
+                currContour.cutEnter(notchPrev, u);
+                state = 'inside';
+                console.log('entered');
+                break;
+              } else if (state == 'inside') {
+                // if the current state is inside, and an interdsection is
+                // detected, then we need to discuss whether the cutter has
+                // cut through the shape, or a ring is encountered.
+                if (enteredContour === contourIndex) {
+                  // we are cutting through the shape.
+                  splitPrev = contourSegIndex;
+                  currContour.cutEnter(splitPrev, u);
+                  notchPrev += notchPrev > splitPrev ? 1 : 0;
+                  state = 'outside';
+                  let [left, right] = currContour.cutThrough(notchPrev + 1, splitPrev + 1);
+                  candidates.push(new _Poly__WEBPACK_IMPORTED_MODULE_2__["default"](new _List__WEBPACK_IMPORTED_MODULE_1__["default"](left)), new _Poly__WEBPACK_IMPORTED_MODULE_2__["default"](new _List__WEBPACK_IMPORTED_MODULE_1__["default"](right)));
+                  break polygonCandidateIteration;
+                } else {
+                  // cutting a different contour, which means we encounter
+                  // a ring.
+                  splitPrev = contourSegIndex;
+                  currContour.cutEnter(splitPrev, u);
+                  state = 'outside';
+                  let res = poly.contours[enteredContour].cutThroughRing(notchPrev + 1, splitPrev + 1, currContour);
+                  candidates.push(new _Poly__WEBPACK_IMPORTED_MODULE_2__["default"](new _List__WEBPACK_IMPORTED_MODULE_1__["default"](res)));
+                  break polygonCandidateIteration;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      res.push(currPoly);
+    }
+
+    console.log("reached here");
+    return res;
   }
 
 }

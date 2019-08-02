@@ -103,10 +103,12 @@ function testCut(){
     let poly = new Poly([vecsCircle, innerCircle]),
         stroke = new Stroke(new Segs(0).fromVecs(vecsLine));
 
+    // poly.trans(new Vec(0, -0.4));
     poly.draw(ctx, true);
 
-    let res = poly.cut(stroke);
-    let shratio = -0.025;
+    let res = stroke.cut(poly);
+    let shratio = -0.015;
+    console.log(res);
     for (let cutPoly of res){
         cutPoly = cutPoly.copy();
         cutPoly.shrink(shratio);
