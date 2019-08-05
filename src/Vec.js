@@ -170,6 +170,11 @@ export default class Vec{
      * |               |
      * |this.y   that.y|
      * 
+     * also, this can be used for determining which side
+     * does the "that" vector resides, left or right.
+     * When the cross product is positive, the "that" is
+     * on LEFT of this vector.
+     * 
      * @param {Vec} that another vector
      */
     cross(that){

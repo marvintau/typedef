@@ -18,9 +18,10 @@ function segIntersect(head1, tail1, head2, tail2){
         detS = h1t1.cross(h2t2),
         t = detT/detS,
         u = -detU/detS,
-        p = head1.add(tail1.sub(head1).mult(t));
+        p = head1.add(tail1.sub(head1).mult(t)),
+        d = detS;
     
-    return {t, u, p}
+    return {t, u, p, d}
 }
 
 import Vec from './Vec';

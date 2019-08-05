@@ -5,6 +5,7 @@ import List from './List';
 import Segs from './Segs';
 import Poly from './Poly';
 import Stroke from './Stroke';
+import Seg from './Seg';
 
 let canvas = document.createElement('canvas'),
     ctx = canvas.getContext('2d'),
@@ -91,32 +92,38 @@ function testShrink(){
 
 function testCut(){
 
-    let len  = 12;
-    let vecsCircle =(new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5)),
-        innerCircle = (new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.3));
-    let vecsLine = Array(len).fill(0).map((e, i)=> new Vec( 1-i/(6-1),0.15+i*0.01) );
+    let seg1 = new Seg(new Vec(0, 0), new Vec(0, 1)),
+        seg2 = new Seg(new Vec(0, 0), new Vec(1, 0)),
+        seg3 = new Seg(new Vec(-1, 0), new Vec(2, 0));
 
-    vecsCircle = new Segs(0).fromVecs(vecsCircle);
-    innerCircle = new Segs(0).fromVecs(innerCircle);
-    innerCircle.flip();
+    console.log(seg1.intersect(seg2));
+    console.log(seg1.intersect(seg3));
 
-    let poly = new Poly([vecsCircle, innerCircle]),
-        stroke = new Stroke(new Segs(0).fromVecs(vecsLine));
+    let edges  = 4,
+        circles = new List(0);
+    for (let i = 0; i < 4; i++){
+        let vecs = (new List(edges+i*4)).fill(0).map((e, n) => (new Vec(n/(edges+i*4)*360+22.5)).mult(0.3+i*0.2)),
+            circle = new Segs(0).fromVecs(vecs);
+        
+        if(i%2 === 0) {circle.flip()};
+        circles.push(circle);
+    }
+    let poly = new Poly(circles);
 
-    // poly.trans(new Vec(0, -0.4));
-    poly.draw(ctx, true);
-
-    let res = stroke.cut(poly);
-    let shratio = -0.015;
-    console.log(res);
-    for (let cutPoly of res){
-        cutPoly = cutPoly.copy();
-        cutPoly.shrink(shratio);
-        cutPoly.draw(ctx, false, '#34567888');
+    let len = 14,
+        width = 0.6;
+    for (let i = 0; i < 4; i++){
+        let vecsLine = [new Vec(-0.2 *(i+1), i*0.05), new Vec(0.2 * (i+1), i*0.05)];
+        let stroke = new Stroke(new Segs(0).fromVecs(vecsLine));
+        stroke.cut(poly);
+        poly = poly.copy();
+        stroke.draw(ctx, false);
     }
 
-    stroke.draw(ctx);
-    
+    let shratio = -0.02;
+    poly = poly.copy();
+    poly.shrink(shratio);
+    poly.draw(ctx, true, '#34567888');
     
 }
 testCut();

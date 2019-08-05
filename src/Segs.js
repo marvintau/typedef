@@ -112,25 +112,27 @@ export default class Segs extends List {
     cutEnter(notch, ratio){
         
         let seg = this[notch],
-            lerp = seg.lerp(ratio);
+            lerp = seg.lerp(ratio),
+            tail = seg.tail;
 
         seg.tail = lerp;
-        this.splice(notch+1, 0, new Seg(lerp, seg.tail));
+        this.splice(notch+1, 0, new Seg(lerp, tail));
     }
 
     cutGoing(notchPrev, point){
         let seg = this[notchPrev];
-        this.splice(notchPrev+1, 0, new Seg(seg.tail, point), new Seg(point, seg.tail));
+        this.splice(notchPrev+1, 0, new Seg(seg.tail, point), new Seg(point, seg.tail.copy()));
+        this[notchPrev+2].head = this[notchPrev+1].tail;
     }
 
     cutThrough(notchPrev, splitPrev){
 
         let result = [];
         if (notchPrev < splitPrev){
-            console.log('notch - split - 0')
+            // console.log('notch - split - 0')
             result = [this.slice(notchPrev, splitPrev), this.slice(0, notchPrev+1).concat(this.slice(splitPrev))];
         } else if (notchPrev > splitPrev){
-            console.log('notch - 0 - split')
+            // console.log('notch - 0 - split')
             result = [this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev)];
         } else throw Error('its impossible to have same notchPrev and splitPrev', notchPrev, splitPrev);
 
@@ -139,7 +141,7 @@ export default class Segs extends List {
 
     cutThroughRing(notchPrev, splitPrev, ringSegs){
         let splittedRingSegs = [...ringSegs.slice(splitPrev), ...ringSegs.slice(0, splitPrev+1)];
-        return new Segs(...[...this.slice(0, notchPrev), ...splittedRingSegs, ...this.slice(notchPrev)]);
+        return new Segs(...[...this.slice(0, notchPrev+1), ...splittedRingSegs, ...this.slice(notchPrev)]);
     }
 
     torque(){

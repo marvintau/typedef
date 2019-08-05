@@ -9,7 +9,7 @@ export default class Poly {
 
     close(){
         for (let contour of this.contours){
-            console.log(contour);
+            // console.log(contour);
             if(!contour.last().tail.equal(contour[0].head)){
                 let conn = new Seg(contour.last().tail, contour[0].head);
                 contour.push(conn); 
@@ -42,16 +42,72 @@ export default class Poly {
         ctx.stroke();
 
         ctx.save();
-        if (stroke){
-            ctx.fillStyle='rgb(0, 0, 0, 0.5)'
-            for (let contour of this.contours){
-                for (let [index, seg] of contour.entries()){
+        ctx.fillStyle='rgb(0, 0, 0, 0.2)'
+        for (let contour of this.contours){
+            for (let [index, seg] of contour.entries()){
+                if(stroke)
                     ctx.text(index, seg.head);
-                    // ctx.point(seg.head);
-                }
+                else
+                    ctx.point(seg.head);
             }
         }
         ctx.restore();
+    }
+
+    // return intersections between all contours of poly, and
+    // the given seg, sorted by t parameter.
+    intersectSeg(cutterSeg){
+        let intersects = [];
+        let EPSILON = 1e-10;
+
+        for (let con = 0; con < this.contours.length; con++){
+            let segs = this.contours[con];
+            for (let seg = 0; seg < segs.length; seg++){
+                let {t, u, d} = cutterSeg.intersect(segs[seg]);
+                if ( t < 1-EPSILON && t > EPSILON && u < 1-EPSILON && u > EPSILON ){
+                    intersects.push({t, u, d, con, seg});
+                }
+            }
+        }
+        intersects.sort((a, b) => a.t - b.t)
+        
+        return intersects;
+    }
+
+    intersectHead(cutterSeg){
+        let intersects = [];
+        let EPSILON = 1e-10;
+
+        for (let con = 0; con < this.contours.length; con++){
+            let segs = this.contours[con];
+            for (let seg = 0; seg < segs.length; seg++){
+                let {t, u, d} = cutterSeg.intersect(segs[seg]);
+                if ( t < EPSILON && u < 1-EPSILON && u > EPSILON ){
+                    intersects.push({t, u, d, con, seg});
+                }
+            }
+        }
+        intersects.sort((a, b) => b.t - a.t)
+        // console.log(intersects, 'headIntersects')
+        return intersects;
+    }
+
+    intersectTail(cutterSeg){
+        let intersects = [];
+        let EPSILON = 1e-10;
+
+        for (let con = 0; con < this.contours.length; con++){
+            let segs = this.contours[con];
+            for (let seg = 0; seg < segs.length; seg++){
+                let {t, u, p, d} = cutterSeg.intersect(segs[seg]);
+                if ( t > 1 - EPSILON && u < 1-EPSILON && u > EPSILON ){
+                    intersects.push({t, u, p, d, con, seg});
+                }
+            }
+        }
+        intersects.sort((a, b) => a.t - b.t)
+        // console.log(intersects, 'tailIntersects')
+        return intersects;
     }
 
     shrink(shrink){
