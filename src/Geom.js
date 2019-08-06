@@ -74,7 +74,7 @@ function toPolyCentroid(vecList){
             polyArea = toPolyArea(polySegs),
             xPairSums = polySegs.map(seg => seg.head.x + seg.tail.x),
             yPairSums = polySegs.map(seg => seg.head.y + seg.tail.y),
-            crosses = polySegs.map(seg => seg.incross());
+            crosses = polySegs.map(seg => seg.cross());
         
         let centroid = new Vec(0, 0);
         // console.log(vecList,  xPairSums, yPairSums, crosses, polyArea);

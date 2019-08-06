@@ -1,4 +1,4 @@
-class Torque{
+export default class Torque{
     constructor({center, mass}){
         // console.log("new torque", center, mass)
         this.center = center ? center : new Vec(0, 0);

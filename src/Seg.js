@@ -25,6 +25,7 @@ function segIntersect(head1, tail1, head2, tail2){
 }
 
 import Vec from './Vec';
+import Torque from './Torque';
 
 export default class Seg {
     constructor(hd, tl){

@@ -1,6 +1,61 @@
 import Seg from './Seg';
 import List from './List';
-import Poly from './Poly';
+
+function intersectHead(cutterSeg, contours){
+    let intersects = [];
+    let EPSILON = 1e-10;
+
+    for (let con = 0; con < contours.length; con++){
+        let segs = contours[con];
+        for (let seg = 0; seg < segs.length; seg++){
+            let {t, u, d} = cutterSeg.intersect(segs[seg]);
+            if ( t < EPSILON && u < 1-EPSILON && u > EPSILON ){
+                intersects.push({t, u, d, con, seg});
+            }
+        }
+    }
+    intersects.sort((a, b) => b.t - a.t)
+    // console.log(intersects, 'headIntersects')
+    return intersects;
+}
+
+function intersectTail(cutterSeg, contours){
+    let intersects = [];
+    let EPSILON = 1e-10;
+
+    for (let con = 0; con < contours.length; con++){
+        let segs = contours[con];
+        for (let seg = 0; seg < segs.length; seg++){
+            let {t, u, p, d} = cutterSeg.intersect(segs[seg]);
+            if ( t > 1 - EPSILON && u < 1-EPSILON && u > EPSILON ){
+                intersects.push({t, u, p, d, con, seg});
+            }
+        }
+    }
+    intersects.sort((a, b) => a.t - b.t)
+    // console.log(intersects, 'tailIntersects')
+    return intersects;
+}
+
+// return intersections between all contours of poly, and
+// the given seg, sorted by t parameter.
+function intersectSeg(cutterSeg, contours){
+    let intersects = [];
+    let EPSILON = 1e-10;
+
+    for (let con = 0; con < contours.length; con++){
+        let segs = contours[con];
+        for (let seg = 0; seg < segs.length; seg++){
+            let {t, u, d} = cutterSeg.intersect(segs[seg]);
+            if ( t < 1-EPSILON && t > EPSILON && u < 1-EPSILON && u > EPSILON ){
+                intersects.push({t, u, d, con, seg});
+            }
+        }
+    }
+    intersects.sort((a, b) => a.t - b.t)
+    
+    return intersects;
+}
 
 export default class Stroke {
     constructor(segList, closed){
@@ -11,12 +66,28 @@ export default class Stroke {
             let conn = new Seg(this.segs.last().tail.copy(), this.segs[0].head.copy());
             this.segs.push(conn); 
         }
+        
+        this.displayed = this.segs.copy();
+    }
+
+    trans(vec){
+        this.segs.trans(vec);
+        this.displayed = this.segs.copy();
+    }
+
+    joint(that, {thisPos, thatPos}){
+        if (thisPos === 1){
+            this.segs.push(...(thatPos === 0 ? that.segs : that.segs.reverse()));
+        } else if (thisPos === 0){
+            this.segs.unshift(...(thatPos === 0 ? that.segs : that.segs.reverse()));
+        }
+        this.displayed = this.segs.copy();
     }
 
     draw(ctx, stroke){
         ctx.strokeStyle = 'black';
         ctx.beginPath();
-        ctx.drawSegs(this.segs);
+        ctx.drawSegs(this.displayed);
         ctx.stroke();
     
         ctx.save();
@@ -31,7 +102,11 @@ export default class Stroke {
         ctx.restore();
     }
 
-    cut(poly){
+    center(){
+        return this.segs.torque().center;
+    }
+
+    cut(contours){
 
         let entered, notchPrev, splitPrev;
 
@@ -39,7 +114,7 @@ export default class Stroke {
             let cutterSeg = this.segs[cutter];
 
             if(cutter===0){
-                let headIntersects = poly.intersectHead(cutterSeg);
+                let headIntersects = intersectHead(cutterSeg, contours);
                 if (headIntersects.length > 0){
                     let {t, con, d} = headIntersects[0];
                     console.log('head', con, t, d);
@@ -48,7 +123,7 @@ export default class Stroke {
             }
 
             if(cutter === this.segs.length - 1){
-                let tailIntersects = poly.intersectTail(cutterSeg);
+                let tailIntersects = intersectTail(cutterSeg, contours);
                 if (tailIntersects.length > 0){
                     let {t, con, d, p} = tailIntersects[0];
                     if (d > 0) cutterSeg.tail.iadd(p.sub(cutterSeg.tail).mult(t));
@@ -57,17 +132,15 @@ export default class Stroke {
 
             if(entered !== undefined){
                 // console.log(entered, contours);
-                poly.contours[entered].cutGoing(notchPrev, cutterSeg.head);
+                contours[entered].cutGoing(notchPrev, cutterSeg.head);
                 notchPrev += 1;
             }
 
             // find the intersections bettwen the segment from cutter
             // stroke and from all contours. Sort them by the distance
             // bettwen the intersection to the head of cutter segment.
-
-            // let counter = 5;
             while(true){
-                let intersects = poly.intersectSeg(cutterSeg);
+                let intersects = intersectSeg(cutterSeg, contours);
                 if (intersects.length === 0) break;
 
                 let {u, d, con, seg} = intersects[0];
@@ -75,29 +148,30 @@ export default class Stroke {
                     console.log('entered', con);
                     entered = con;
                     notchPrev = seg;
-                    poly.contours[entered].cutEnter(notchPrev, u);
+                    contours[entered].cutEnter(notchPrev, u);
                 } else {
 
                     splitPrev = seg;
                     if (entered === con) {
                         console.log('cutting through self');
-                        poly.contours[entered].cutEnter(splitPrev, u);
+                        contours[entered].cutEnter(splitPrev, u);
                         notchPrev += notchPrev > splitPrev ? 1: 0;
     
-                        let [left, right] = poly.contours[entered].cutThrough(notchPrev+1, splitPrev+1);
-                        poly.contours.splice(con, 1, left, right);
+                        let [left, right] = contours[entered].cutThrough(notchPrev+1, splitPrev+1);
+                        contours.splice(con, 1, left, right);
                     } else {
                         console.log('cutting through ring', con);
-                        poly.contours[con].cutEnter(splitPrev, u);
-                        poly.contours[entered] = poly.contours[entered].cutThroughRing(notchPrev+1, splitPrev+1, poly.contours[con]);
-                        poly.contours.splice(con, 1);
+                        contours[con].cutEnter(splitPrev, u);
+                        contours[entered] = contours[entered].cutThroughRing(notchPrev+1, splitPrev+1, contours[con]);
+                        contours.splice(con, 1);
                     }
                     entered = undefined;
-                    console.log('contours', poly.contours);
+                    // console.log('contours', contours);
                 }    
             }
         }
 
+        return contours;
         // console.log(contours);
    }
 

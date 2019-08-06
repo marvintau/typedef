@@ -152,12 +152,19 @@ CanvasRenderingContext2D.prototype.drawContours = function (contours) {
   }
 };
 
-CanvasRenderingContext2D.prototype.text = function (text, vec) {
+CanvasRenderingContext2D.prototype.text = function (text, vec, fontsize) {
+  this.save();
+  this.font = `${fontsize ? fontsize : 10}px Helvetica`;
+  this.textAlign = 'center';
+  this.textBaseline = 'middle';
+
   if (vec != undefined) {
     let dpr = window.devicePixelRatio,
         ratio = this.canvas.height / 2 / dpr;
     this.fillText(text, vec.x * ratio, vec.y * ratio);
   }
+
+  this.restore();
 };
 
 CanvasRenderingContext2D.prototype.drawBound = function (vecs, num, {
@@ -263,7 +270,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Vec__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Vec */ "./src/Vec.js");
 /* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./List */ "./src/List.js");
 /* harmony import */ var _Segs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Segs */ "./src/Segs.js");
-/* harmony import */ var _Poly__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Poly */ "./src/Poly.js");
+/* harmony import */ var _Radical__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Radical */ "./src/Radical.js");
 /* harmony import */ var _Stroke__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Stroke */ "./src/Stroke.js");
 /* harmony import */ var _Seg__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./Seg */ "./src/Seg.js");
 
@@ -284,7 +291,7 @@ document.getElementById('canvas-container').appendChild(canvas);
 ctx.translate(canvas.width / 2, canvas.height / 2);
 ctx.scale(dpr, dpr);
 
-function testPoly() {
+function tes() {
   let len = 19,
       range = 5;
   let vecsCircles = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](0);
@@ -299,18 +306,18 @@ function testPoly() {
     }
   }
 
-  let poly = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"](vecsCircles),
+  let poly = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"](vecsCircles),
       polyCopy = poly.copy();
   console.log(poly);
   poly.shrink(0.05, ctx); // polyCopy.draw(ctx);
   // poly.draw(ctx);
-} // testPoly();
+} // testRadical();
 
 
 function testShrink() {
   let len = 12;
   let vecsCircle = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / len * 360).mult(0.5));
-  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / (6 - 1) * 2 - 1, 0.3)); // let poly1 = new Poly([(new Segs(0).fromVecs(vecsCircle))]);
+  let vecsLine = Array(len).fill(0).map((e, i) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i / (6 - 1) * 2 - 1, 0.3)); // let poly1 = new Radical([(new Segs(0).fromVecs(vecsCircle))]);
 
   let stroke1 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsCircle), true),
       stroke2 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsLine));
@@ -320,8 +327,8 @@ function testShrink() {
   stroke1.segs.cutGoing(enter + 2, new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.1, 0));
   let cuts = stroke1.segs.cutLeave(enter + 3, 14, 0.5);
   console.log(cuts[0].map(e => e.head), 'cutresult');
-  let poly1 = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"](new _List__WEBPACK_IMPORTED_MODULE_2__["default"](cuts[0])),
-      poly2 = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"](new _List__WEBPACK_IMPORTED_MODULE_2__["default"](cuts[1])),
+  let poly1 = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"](new _List__WEBPACK_IMPORTED_MODULE_2__["default"](cuts[0])),
+      poly2 = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"](new _List__WEBPACK_IMPORTED_MODULE_2__["default"](cuts[1])),
       poly3,
       poly4;
   poly1 = poly1.copy();
@@ -363,17 +370,18 @@ function testCut() {
     }
 
     ;
+    console.log(circle.area());
     circles.push(circle);
   }
 
-  let poly = new _Poly__WEBPACK_IMPORTED_MODULE_4__["default"](circles);
+  let poly = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"](circles);
   let len = 14,
       width = 0.6;
 
   for (let i = 0; i < 4; i++) {
-    let vecsLine = [new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.2 * (i + 1), i * 0.05), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.2 * (i + 1), i * 0.05)];
+    let vecsLine = [new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.2 * (i + 1), i * 0.05), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0, i * 0.05), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.2 * (i + 1), i * 0.05)];
     let stroke = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecsLine));
-    stroke.cut(poly);
+    poly.contours = stroke.cut(poly.contours);
     poly = poly.copy();
     stroke.draw(ctx, false);
   }
@@ -382,37 +390,105 @@ function testCut() {
   poly = poly.copy();
   poly.shrink(shratio);
   poly.draw(ctx, true, '#34567888');
+} // testCut();
+
+
+function testCentroid() {
+  let edges = 4,
+      circles = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](0);
+
+  for (let i = 0; i < 5; i++) {
+    let vecs = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](edges + i * 4).fill(0).map((e, n) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](n / (edges + i * 4) * 360 + 22.5).mult(0.3 + i * 0.1).add(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i * 0.05, 0))),
+        circle = new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecs);
+
+    if (i % 2 === 0) {
+      circle.flip();
+    }
+
+    ;
+    console.log(circle.area());
+    circles.push(circle);
+  }
+
+  let poly = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"](circles);
+  poly.draw(ctx, true);
+} // testCentroid();
+
+
+function testRadical() {
+  let radical = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"]();
+  let stroke1 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.4, 0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.4)])),
+      stroke2 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, -0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.3, 0), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.4)])),
+      stroke3 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, -0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.4)]));
+  radical.addStroke(stroke1, [0]);
+  radical.addStroke(stroke2, [0, 1]);
+  radical.addStroke(stroke3, [0, 2]);
+  radical.shrink(-0.02);
+  radical.draw(ctx, false);
+  console.log(radical.contours);
 }
 
-testCut();
+testRadical();
+
+function testCutUndo() {
+  let edges = 6;
+  let circles = [];
+
+  for (let i = 0; i < 1; i++) {
+    let vecs = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](edges + i * 4).fill(0).map((e, n) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](n / (edges + i * 4) * 360 + 22.5).mult(0.8 + i * 0.3).add(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i * 0.05, 0))),
+        circle = new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecs); // if(i%2 === 0) {circle.flip()};
+
+    console.log(circle.area());
+    circles.push(circle);
+  }
+
+  let poly = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"](circles);
+  let stroke = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.4, 0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0, 0), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.3)]));
+  poly.counters = stroke.cut(poly.contours);
+  poly.counters[0].undoCutThrough(poly.counters[1]);
+  poly.counters[0].undoCut();
+  poly.counters.splice(1, 1);
+  console.log(poly.counters); // poly.shrink(-0.02);
+  // stroke.draw(ctx);
+
+  poly.draw(ctx, true);
+} // testCutUndo()
 
 /***/ }),
 
-/***/ "./src/Poly.js":
-/*!*********************!*\
-  !*** ./src/Poly.js ***!
-  \*********************/
+/***/ "./src/Radical.js":
+/*!************************!*\
+  !*** ./src/Radical.js ***!
+  \************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Poly; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Radical; });
 /* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./List */ "./src/List.js");
-/* harmony import */ var _Seg__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Seg */ "./src/Seg.js");
+/* harmony import */ var _Segs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Segs */ "./src/Segs.js");
+/* harmony import */ var _Seg__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Seg */ "./src/Seg.js");
+/* harmony import */ var _Vec__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Vec */ "./src/Vec.js");
 
 
-class Poly {
-  constructor(contours = new Segs(0)) {
+
+
+class Radical {
+  constructor(contours) {
+    if (contours === undefined) {
+      contours = new _List__WEBPACK_IMPORTED_MODULE_0__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_1__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_3__["default"](-1, -1), new _Vec__WEBPACK_IMPORTED_MODULE_3__["default"](1, -1), new _Vec__WEBPACK_IMPORTED_MODULE_3__["default"](1, 1), new _Vec__WEBPACK_IMPORTED_MODULE_3__["default"](-1, 1)]));
+    }
+
     this.contours = contours;
-    this.close();
+    this.closeContours();
+    this.strokes = [];
   }
 
-  close() {
+  closeContours() {
     for (let contour of this.contours) {
-      // console.log(contour);
       if (!contour.last().tail.equal(contour[0].head)) {
-        let conn = new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](contour.last().tail, contour[0].head);
+        let conn = new _Seg__WEBPACK_IMPORTED_MODULE_2__["default"](contour.last().tail, contour[0].head);
         contour.push(conn);
       } else {
         contour.last().tail = contour[0].head;
@@ -420,8 +496,44 @@ class Poly {
     }
   }
 
+  union(contourLabels) {
+    if (contourLabels.length === 1) {
+      return this.contours[contourLabels[0]].copy();
+    } else if (contourLabels.length > 1) {
+      let contours = this.contours.copy(),
+          [first, ...restLabels] = contourLabels,
+          unioned = contours[first].copy(); // console.log(JSON.stringify(contourLabels.map(e => contours[e]), null, 2));
+
+      for (let label of restLabels) {
+        unioned.undoCutThrough(contours[label]);
+        unioned.undoCut();
+      } // console.log(unioned, 'unioned');
+
+
+      return unioned;
+    } else throw Error('Radical union: YOU MUST EXPLICITLY SPECIFY THE LABELS OF CONTOURS TO BE UNIONED');
+  }
+
+  split(stroke, contourLabels) {}
+
+  addStroke(stroke, unioned = [], splitted = []) {
+    // 1. get the union of contours and calculate the place;
+    //    where the stroke will be put.
+    let unionedContour = this.union(unioned);
+    stroke.trans(unionedContour.centroid().sub(stroke.center())); // console.log('addStroke unioned', unionedContour);
+
+    if (splitted.length === 0) {
+      this.contours = stroke.cut(this.contours).copy(); // console.log('addstroke', this.contours)
+
+      this.closeContours();
+    } else {// if to split specified
+    }
+
+    this.strokes.push(stroke);
+  }
+
   copy() {
-    let poly = new Poly(this.contours.copy()); // poly.close();
+    let poly = new Radical(this.contours.copy()); // poly.close();
 
     return poly;
   }
@@ -431,121 +543,6 @@ class Poly {
       contour.trans(vec);
       contour.last().tail.iadd(vec.neg());
     }
-  }
-
-  draw(ctx, stroke, color = 'rgb(0, 0, 0, 0.1)') {
-    ctx.strokeStyle = 'black';
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.drawContours(this.contours);
-    ctx.fill();
-    if (stroke) ctx.stroke();
-    ctx.save();
-    ctx.fillStyle = 'rgb(0, 0, 0, 0.2)';
-
-    for (let contour of this.contours) {
-      for (let [index, seg] of contour.entries()) {
-        if (stroke) ctx.text(index, seg.head);else ctx.point(seg.head);
-      }
-    }
-
-    ctx.restore();
-  } // return intersections between all contours of poly, and
-  // the given seg, sorted by t parameter.
-
-
-  intersectSeg(cutterSeg) {
-    let intersects = [];
-    let EPSILON = 1e-10;
-
-    for (let con = 0; con < this.contours.length; con++) {
-      let segs = this.contours[con];
-
-      for (let seg = 0; seg < segs.length; seg++) {
-        let {
-          t,
-          u,
-          d
-        } = cutterSeg.intersect(segs[seg]);
-
-        if (t < 1 - EPSILON && t > EPSILON && u < 1 - EPSILON && u > EPSILON) {
-          intersects.push({
-            t,
-            u,
-            d,
-            con,
-            seg
-          });
-        }
-      }
-    }
-
-    intersects.sort((a, b) => a.t - b.t);
-    return intersects;
-  }
-
-  intersectHead(cutterSeg) {
-    let intersects = [];
-    let EPSILON = 1e-10;
-
-    for (let con = 0; con < this.contours.length; con++) {
-      let segs = this.contours[con];
-
-      for (let seg = 0; seg < segs.length; seg++) {
-        let {
-          t,
-          u,
-          d
-        } = cutterSeg.intersect(segs[seg]);
-
-        if (t < EPSILON && u < 1 - EPSILON && u > EPSILON) {
-          intersects.push({
-            t,
-            u,
-            d,
-            con,
-            seg
-          });
-        }
-      }
-    }
-
-    intersects.sort((a, b) => b.t - a.t); // console.log(intersects, 'headIntersects')
-
-    return intersects;
-  }
-
-  intersectTail(cutterSeg) {
-    let intersects = [];
-    let EPSILON = 1e-10;
-
-    for (let con = 0; con < this.contours.length; con++) {
-      let segs = this.contours[con];
-
-      for (let seg = 0; seg < segs.length; seg++) {
-        let {
-          t,
-          u,
-          p,
-          d
-        } = cutterSeg.intersect(segs[seg]);
-
-        if (t > 1 - EPSILON && u < 1 - EPSILON && u > EPSILON) {
-          intersects.push({
-            t,
-            u,
-            p,
-            d,
-            con,
-            seg
-          });
-        }
-      }
-    }
-
-    intersects.sort((a, b) => a.t - b.t); // console.log(intersects, 'tailIntersects')
-
-    return intersects;
   }
 
   shrink(shrink) {
@@ -570,6 +567,37 @@ class Poly {
     }
   }
 
+  draw(ctx, stroke, color = 'rgb(0, 0, 0, 0.1)') {
+    ctx.strokeStyle = 'black';
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.drawContours(this.contours);
+    ctx.fill();
+    if (stroke) ctx.stroke();
+    ctx.save();
+    ctx.fillStyle = 'rgb(0, 0, 0, 0.2)';
+
+    for (let i = 0; i < this.contours.length; i++) {
+      let contour = this.contours[i];
+
+      for (let [index, seg] of contour.entries()) {
+        if (stroke) ctx.text(index, seg.head);else ctx.point(seg.head);
+      } // ctx.point(contour.centroid());
+
+
+      ctx.text(i, contour.centroid(), Math.abs(contour.area()) * 80);
+    }
+
+    ctx.restore();
+    ctx.save();
+
+    for (let stroke of this.strokes) {
+      stroke.draw(ctx);
+    }
+
+    ctx.restore();
+  }
+
 }
 
 /***/ }),
@@ -585,6 +613,7 @@ class Poly {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Seg; });
 /* harmony import */ var _Vec__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Vec */ "./src/Vec.js");
+/* harmony import */ var _Torque__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Torque */ "./src/Torque.js");
 // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
 // 
 // note that:
@@ -613,6 +642,7 @@ function segIntersect(head1, tail1, head2, tail2) {
     d
   };
 }
+
 
 
 class Seg {
@@ -653,7 +683,7 @@ class Seg {
   }
 
   torque() {
-    return new Torque({
+    return new _Torque__WEBPACK_IMPORTED_MODULE_1__["default"]({
       center: this.lerp(0.5),
       mass: this.len()
     });
@@ -711,6 +741,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Segs; });
 /* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./List */ "./src/List.js");
 /* harmony import */ var _Seg__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Seg */ "./src/Seg.js");
+/* harmony import */ var _Vec__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Vec */ "./src/Vec.js");
+/* harmony import */ var _Torque__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Torque */ "./src/Torque.js");
+
+
 
 
 class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
@@ -722,8 +756,20 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
     for (let i = 0; i < this.length - 1; i++) {
       this[i + 1].head = this[i].tail;
     }
-  } // torque calculation will be added here.
+  }
 
+  area() {
+    return this.map(seg => seg.cross()).sum() / 2;
+  }
+
+  centroid() {
+    if (this.length > 0) {
+      let area = this.area();
+      return this.map(e => e.head.add(e.tail).mult(e.cross() / (6 * area))).reduce((acc, e) => acc.add(e), new _Vec__WEBPACK_IMPORTED_MODULE_2__["default"](0, 0));
+    } else {
+      return undefined;
+    }
+  }
 
   fromVecs(vecs) {
     let list = new _List__WEBPACK_IMPORTED_MODULE_0__["default"](vecs.slice(0, -1), vecs.slice(1)).zip(e => new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](...e));
@@ -782,7 +828,7 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
 
   trans(transVec) {
     for (let seg of this) {
-      console.log('yay');
+      console.log('yay', transVec);
       seg.head.iadd(transVec);
     }
 
@@ -850,10 +896,10 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
     let result = [];
 
     if (notchPrev < splitPrev) {
-      // console.log('notch - split - 0')
+      console.log('notch - split - 0');
       result = [this.slice(notchPrev, splitPrev), this.slice(0, notchPrev + 1).concat(this.slice(splitPrev))];
     } else if (notchPrev > splitPrev) {
-      // console.log('notch - 0 - split')
+      console.log('notch - 0 - split');
       result = [this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev)];
     } else throw Error('its impossible to have same notchPrev and splitPrev', notchPrev, splitPrev);
 
@@ -865,8 +911,39 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
     return new Segs(...[...this.slice(0, notchPrev + 1), ...splittedRingSegs, ...this.slice(notchPrev)]);
   }
 
+  undoCut() {
+    let thereIsStillNotch = true;
+
+    while (thereIsStillNotch) next: {
+      for (let i = 0; i < this.length - 1; i++) {
+        if (this[i].head.equal(this[i + 1].tail) && this[i].tail.equal(this[i + 1].head)) {
+          console.log(i, 'undo');
+          this.splice(i, 2);
+          console.log(this, this[i - 1]);
+          this[i].head = this[i - 1].tail;
+          break next;
+        }
+      }
+
+      thereIsStillNotch = false;
+    }
+  }
+
+  undoCutThrough(that) {
+    for (let i = 0; i < this.length; i++) {
+      for (let j = 0; j < that.length; j++) {
+        if (this[i].head.equal(that[j].tail) && this[i].tail.equal(that[j].head)) {
+          let thatSlice = [...that.slice(j + 1), ...that.slice(0, j)];
+          console.log('encountered', thatSlice);
+          this.splice(i + 1, ...thatSlice);
+          return;
+        }
+      }
+    }
+  }
+
   torque() {
-    let product = new Vec();
+    let product = new _Vec__WEBPACK_IMPORTED_MODULE_2__["default"]();
 
     for (let seg of this) {
       product.iadd(seg.torque().toProduct());
@@ -874,7 +951,7 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
 
     let mass = this.lens().sum();
     let center = product.mult(this.length === 0 ? 0 : 1 / mass);
-    return new Torque({
+    return new _Torque__WEBPACK_IMPORTED_MODULE_3__["default"]({
       center,
       mass
     });
@@ -907,9 +984,104 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Stroke; });
 /* harmony import */ var _Seg__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Seg */ "./src/Seg.js");
 /* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./List */ "./src/List.js");
-/* harmony import */ var _Poly__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Poly */ "./src/Poly.js");
 
 
+
+function intersectHead(cutterSeg, contours) {
+  let intersects = [];
+  let EPSILON = 1e-10;
+
+  for (let con = 0; con < contours.length; con++) {
+    let segs = contours[con];
+
+    for (let seg = 0; seg < segs.length; seg++) {
+      let {
+        t,
+        u,
+        d
+      } = cutterSeg.intersect(segs[seg]);
+
+      if (t < EPSILON && u < 1 - EPSILON && u > EPSILON) {
+        intersects.push({
+          t,
+          u,
+          d,
+          con,
+          seg
+        });
+      }
+    }
+  }
+
+  intersects.sort((a, b) => b.t - a.t); // console.log(intersects, 'headIntersects')
+
+  return intersects;
+}
+
+function intersectTail(cutterSeg, contours) {
+  let intersects = [];
+  let EPSILON = 1e-10;
+
+  for (let con = 0; con < contours.length; con++) {
+    let segs = contours[con];
+
+    for (let seg = 0; seg < segs.length; seg++) {
+      let {
+        t,
+        u,
+        p,
+        d
+      } = cutterSeg.intersect(segs[seg]);
+
+      if (t > 1 - EPSILON && u < 1 - EPSILON && u > EPSILON) {
+        intersects.push({
+          t,
+          u,
+          p,
+          d,
+          con,
+          seg
+        });
+      }
+    }
+  }
+
+  intersects.sort((a, b) => a.t - b.t); // console.log(intersects, 'tailIntersects')
+
+  return intersects;
+} // return intersections between all contours of poly, and
+// the given seg, sorted by t parameter.
+
+
+function intersectSeg(cutterSeg, contours) {
+  let intersects = [];
+  let EPSILON = 1e-10;
+
+  for (let con = 0; con < contours.length; con++) {
+    let segs = contours[con];
+
+    for (let seg = 0; seg < segs.length; seg++) {
+      let {
+        t,
+        u,
+        d
+      } = cutterSeg.intersect(segs[seg]);
+
+      if (t < 1 - EPSILON && t > EPSILON && u < 1 - EPSILON && u > EPSILON) {
+        intersects.push({
+          t,
+          u,
+          d,
+          con,
+          seg
+        });
+      }
+    }
+  }
+
+  intersects.sort((a, b) => a.t - b.t);
+  return intersects;
+}
 
 class Stroke {
   constructor(segList, closed) {
@@ -920,12 +1092,32 @@ class Stroke {
       let conn = new _Seg__WEBPACK_IMPORTED_MODULE_0__["default"](this.segs.last().tail.copy(), this.segs[0].head.copy());
       this.segs.push(conn);
     }
+
+    this.displayed = this.segs.copy();
+  }
+
+  trans(vec) {
+    this.segs.trans(vec);
+    this.displayed = this.segs.copy();
+  }
+
+  joint(that, {
+    thisPos,
+    thatPos
+  }) {
+    if (thisPos === 1) {
+      this.segs.push(...(thatPos === 0 ? that.segs : that.segs.reverse()));
+    } else if (thisPos === 0) {
+      this.segs.unshift(...(thatPos === 0 ? that.segs : that.segs.reverse()));
+    }
+
+    this.displayed = this.segs.copy();
   }
 
   draw(ctx, stroke) {
     ctx.strokeStyle = 'black';
     ctx.beginPath();
-    ctx.drawSegs(this.segs);
+    ctx.drawSegs(this.displayed);
     ctx.stroke();
     ctx.save();
     ctx.fillStyle = "rgb(0, 0, 0, 0.2)";
@@ -937,14 +1129,18 @@ class Stroke {
     ctx.restore();
   }
 
-  cut(poly) {
+  center() {
+    return this.segs.torque().center;
+  }
+
+  cut(contours) {
     let entered, notchPrev, splitPrev;
 
     for (let cutter = 0; cutter < this.segs.length; cutter++) nextCutter: {
       let cutterSeg = this.segs[cutter];
 
       if (cutter === 0) {
-        let headIntersects = poly.intersectHead(cutterSeg);
+        let headIntersects = intersectHead(cutterSeg, contours);
 
         if (headIntersects.length > 0) {
           let {
@@ -958,7 +1154,7 @@ class Stroke {
       }
 
       if (cutter === this.segs.length - 1) {
-        let tailIntersects = poly.intersectTail(cutterSeg);
+        let tailIntersects = intersectTail(cutterSeg, contours);
 
         if (tailIntersects.length > 0) {
           let {
@@ -973,16 +1169,15 @@ class Stroke {
 
       if (entered !== undefined) {
         // console.log(entered, contours);
-        poly.contours[entered].cutGoing(notchPrev, cutterSeg.head);
+        contours[entered].cutGoing(notchPrev, cutterSeg.head);
         notchPrev += 1;
       } // find the intersections bettwen the segment from cutter
       // stroke and from all contours. Sort them by the distance
       // bettwen the intersection to the head of cutter segment.
-      // let counter = 5;
 
 
       while (true) {
-        let intersects = poly.intersectSeg(cutterSeg);
+        let intersects = intersectSeg(cutterSeg, contours);
         if (intersects.length === 0) break;
         let {
           u,
@@ -995,29 +1190,57 @@ class Stroke {
           console.log('entered', con);
           entered = con;
           notchPrev = seg;
-          poly.contours[entered].cutEnter(notchPrev, u);
+          contours[entered].cutEnter(notchPrev, u);
         } else {
           splitPrev = seg;
 
           if (entered === con) {
             console.log('cutting through self');
-            poly.contours[entered].cutEnter(splitPrev, u);
+            contours[entered].cutEnter(splitPrev, u);
             notchPrev += notchPrev > splitPrev ? 1 : 0;
-            let [left, right] = poly.contours[entered].cutThrough(notchPrev + 1, splitPrev + 1);
-            poly.contours.splice(con, 1, left, right);
+            let [left, right] = contours[entered].cutThrough(notchPrev + 1, splitPrev + 1);
+            contours.splice(con, 1, left, right);
           } else {
             console.log('cutting through ring', con);
-            poly.contours[con].cutEnter(splitPrev, u);
-            poly.contours[entered] = poly.contours[entered].cutThroughRing(notchPrev + 1, splitPrev + 1, poly.contours[con]);
-            poly.contours.splice(con, 1);
+            contours[con].cutEnter(splitPrev, u);
+            contours[entered] = contours[entered].cutThroughRing(notchPrev + 1, splitPrev + 1, contours[con]);
+            contours.splice(con, 1);
           }
 
-          entered = undefined;
-          console.log('contours', poly.contours);
+          entered = undefined; // console.log('contours', contours);
         }
       }
-    } // console.log(contours);
+    }
 
+    return contours; // console.log(contours);
+  }
+
+}
+
+/***/ }),
+
+/***/ "./src/Torque.js":
+/*!***********************!*\
+  !*** ./src/Torque.js ***!
+  \***********************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Torque; });
+class Torque {
+  constructor({
+    center,
+    mass
+  }) {
+    // console.log("new torque", center, mass)
+    this.center = center ? center : new Vec(0, 0);
+    this.mass = mass !== undefined ? mass : 0;
+  }
+
+  toProduct() {
+    return this.center.mult(this.mass);
   }
 
 }
@@ -1034,6 +1257,7 @@ class Stroke {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Vec; });
+const EPSILON = 1e-6;
 class Vec {
   /**
    * Simple Vector class.
@@ -1075,7 +1299,7 @@ class Vec {
   }
 
   equal(vec) {
-    return this.x === vec.x && this.y === vec.y;
+    return Math.abs(this.x - vec.x) < EPSILON && Math.abs(this.y - vec.y) < EPSILON;
   }
   /**
    * 

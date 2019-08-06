@@ -3,7 +3,7 @@ import './CanvasExtend';
 import Vec from './Vec';
 import List from './List';
 import Segs from './Segs';
-import Poly from './Poly';
+import Radical from './Radical';
 import Stroke from './Stroke';
 import Seg from './Seg';
 
@@ -19,7 +19,7 @@ document.getElementById('canvas-container').appendChild(canvas);
 ctx.translate(canvas.width/2, canvas.height/2);
 ctx.scale(dpr, dpr);
 
-function testPoly(){
+function tes(){
     let len  = 19, range = 5;
     let vecsCircles = new List(0);
     for (let r = 0; r < 6; r++){
@@ -34,21 +34,21 @@ function testPoly(){
         }
     }
 
-    let poly = new Poly(vecsCircles),
+    let poly = new Radical(vecsCircles),
         polyCopy = poly.copy();
     console.log(poly)
     poly.shrink(0.05, ctx);
     // polyCopy.draw(ctx);
     // poly.draw(ctx);
 }
-// testPoly();
+// testRadical();
 
 function testShrink(){
     let len  = 12;
     let vecsCircle =(new List(len)).fill(0).map((e, i) => (new Vec(i/(len)*360)).mult(0.5));
     let vecsLine = Array(len).fill(0).map((e, i)=> new Vec( i/(6-1)*2 - 1, 0.3) );
 
-    // let poly1 = new Poly([(new Segs(0).fromVecs(vecsCircle))]);
+    // let poly1 = new Radical([(new Segs(0).fromVecs(vecsCircle))]);
 
     let stroke1 = new Stroke((new Segs(0)).fromVecs(vecsCircle), true),
         stroke2 = new Stroke(new Segs(0).fromVecs(vecsLine));
@@ -59,8 +59,8 @@ function testShrink(){
     stroke1.segs.cutGoing(enter+2, new Vec(-0.1, 0));
     let cuts = stroke1.segs.cutLeave(enter+3, 14, 0.5);
     console.log(cuts[0].map(e=>e.head),'cutresult');
-    let poly1 = new Poly(new List(cuts[0])),
-        poly2 = new Poly(new List(cuts[1])),
+    let poly1 = new Radical(new List(cuts[0])),
+        poly2 = new Radical(new List(cuts[1])),
         poly3, poly4;
 
 
@@ -106,16 +106,17 @@ function testCut(){
             circle = new Segs(0).fromVecs(vecs);
         
         if(i%2 === 0) {circle.flip()};
+        console.log(circle.area());
         circles.push(circle);
     }
-    let poly = new Poly(circles);
+    let poly = new Radical(circles);
 
     let len = 14,
         width = 0.6;
     for (let i = 0; i < 4; i++){
-        let vecsLine = [new Vec(-0.2 *(i+1), i*0.05), new Vec(0.2 * (i+1), i*0.05)];
+        let vecsLine = [new Vec(-0.2 *(i+1), i*0.05), new Vec(0, i*0.05), new Vec(0.2 * (i+1), i*0.05)];
         let stroke = new Stroke(new Segs(0).fromVecs(vecsLine));
-        stroke.cut(poly);
+        poly.contours = stroke.cut(poly.contours);
         poly = poly.copy();
         stroke.draw(ctx, false);
     }
@@ -126,4 +127,61 @@ function testCut(){
     poly.draw(ctx, true, '#34567888');
     
 }
-testCut();
+// testCut();
+
+function testCentroid(){
+    let edges = 4,
+        circles = new List(0);
+    for (let i = 0; i < 5; i++){
+        let vecs = (new List(edges+i*4)).fill(0).map((e, n) => (new Vec(n/(edges+i*4)*360+22.5)).mult(0.3+i*0.1).add(new Vec(i*0.05, 0))),
+            circle = new Segs(0).fromVecs(vecs);
+        
+        if(i%2 === 0) {circle.flip()};
+        console.log(circle.area());
+        circles.push(circle);
+
+    }
+    let poly = new Radical(circles);
+
+    poly.draw(ctx, true)
+}
+// testCentroid();
+function testRadical(){
+    let radical = new Radical();
+
+    let stroke1 = new Stroke(new Segs(0).fromVecs([new Vec(-0.4, 0.4), new Vec(0.4, 0.4)])),
+        stroke2 = new Stroke(new Segs(0).fromVecs([new Vec(0.4, -0.4), new Vec(0.3, 0), new Vec(0.4, 0.4)])),
+        stroke3 = new Stroke(new Segs(0).fromVecs([new Vec(0.4, -0.4), new Vec(0.4, 0.4)]));
+    radical.addStroke(stroke1, [0]);
+    radical.addStroke(stroke2, [0, 1]);
+    radical.addStroke(stroke3, [0, 2]);
+    radical.shrink(-0.02);
+    radical.draw(ctx, false);
+    console.log(radical.contours);
+}
+testRadical();
+function testCutUndo(){
+    let edges = 6;
+    let circles = [];
+    for (let i = 0; i < 1; i++){
+        let vecs = (new List(edges+i*4)).fill(0).map((e, n) => (new Vec(n/(edges+i*4)*360+22.5)).mult(0.8+i*0.3).add(new Vec(i*0.05, 0))),
+            circle = new Segs(0).fromVecs(vecs);
+        
+        // if(i%2 === 0) {circle.flip()};
+        console.log(circle.area());
+        circles.push(circle);
+
+    }
+    let poly = new Radical(circles);
+
+    let stroke = new Stroke(new Segs(0).fromVecs([new Vec(-0.4, 0.4), new Vec(0, 0), new Vec(0.4, 0.3)]))
+    poly.counters = stroke.cut(poly.contours);
+    poly.counters[0].undoCutThrough(poly.counters[1]);
+    poly.counters[0].undoCut();
+    poly.counters.splice(1, 1);
+    console.log(poly.counters);
+    // poly.shrink(-0.02);
+    // stroke.draw(ctx);
+    poly.draw(ctx, true)
+}
+// testCutUndo()

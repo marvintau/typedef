@@ -1,3 +1,5 @@
+const EPSILON = 1e-6;
+
 export default class Vec{
     /**
      * Simple Vector class.
@@ -49,7 +51,7 @@ export default class Vec{
     }
 
     equal(vec){
-        return this.x === vec.x && this.y === vec.y;
+        return Math.abs(this.x - vec.x) < EPSILON && Math.abs(this.y - vec.y) < EPSILON;
     }
 
     /**

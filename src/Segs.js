@@ -1,5 +1,7 @@
 import List from './List';
 import Seg from './Seg';
+import Vec from './Vec';
+import Torque from './Torque';
 
 export default class Segs extends List {
     constructor(...segs){
@@ -12,7 +14,20 @@ export default class Segs extends List {
         }
     }
 
-    // torque calculation will be added here.
+    area(){
+        return this.map(seg => seg.cross()).sum()/2;
+    }
+
+    centroid(){
+        if (this.length > 0){
+            let area = this.area();
+            return this
+            .map(e => e.head.add(e.tail).mult(e.cross() / (6 * area)))
+            .reduce((acc, e) => acc.add(e), new Vec(0, 0));
+        } else {
+            return undefined;
+        }
+    }    
 
     fromVecs(vecs){
         let list = new List(vecs.slice(0, -1), vecs.slice(1))
@@ -64,7 +79,7 @@ export default class Segs extends List {
 
     trans(transVec){
         for (let seg of this){
-            console.log('yay');
+            console.log('yay', transVec);
             seg.head.iadd(transVec);
         }
         this.last().tail.iadd(transVec);
@@ -129,10 +144,10 @@ export default class Segs extends List {
 
         let result = [];
         if (notchPrev < splitPrev){
-            // console.log('notch - split - 0')
+            console.log('notch - split - 0')
             result = [this.slice(notchPrev, splitPrev), this.slice(0, notchPrev+1).concat(this.slice(splitPrev))];
         } else if (notchPrev > splitPrev){
-            // console.log('notch - 0 - split')
+            console.log('notch - 0 - split')
             result = [this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev)];
         } else throw Error('its impossible to have same notchPrev and splitPrev', notchPrev, splitPrev);
 
@@ -142,6 +157,35 @@ export default class Segs extends List {
     cutThroughRing(notchPrev, splitPrev, ringSegs){
         let splittedRingSegs = [...ringSegs.slice(splitPrev), ...ringSegs.slice(0, splitPrev+1)];
         return new Segs(...[...this.slice(0, notchPrev+1), ...splittedRingSegs, ...this.slice(notchPrev)]);
+    }
+
+    undoCut(){
+        let thereIsStillNotch = true;
+        while(thereIsStillNotch) next:{
+            for (let i = 0; i < this.length-1; i++){
+                if (this[i].head.equal(this[i+1].tail) && this[i].tail.equal(this[i+1].head)){
+                    console.log(i, 'undo')
+                    this.splice(i, 2);
+                    console.log(this, this[i-1]);
+                    this[i].head = this[i-1].tail;
+                    break next;
+                }
+            }
+            thereIsStillNotch = false;
+        }
+    }
+
+    undoCutThrough(that){
+        for (let i = 0; i < this.length; i++){
+            for (let j = 0; j < that.length; j++){
+                if (this[i].head.equal(that[j].tail) && this[i].tail.equal(that[j].head)){
+                    let thatSlice = [...that.slice(j+1), ...that.slice(0, j)];
+                    console.log('encountered', thatSlice);
+                    this.splice(i+1, ...thatSlice);
+                    return;
+                }
+            }
+        }
     }
 
     torque(){

@@ -57,15 +57,19 @@ CanvasRenderingContext2D.prototype.drawContours = function(contours){
 }
 
 
-CanvasRenderingContext2D.prototype.text = function(text, vec){
+CanvasRenderingContext2D.prototype.text = function(text, vec, fontsize){
 
+    this.save();
+    this.font = `${fontsize ? fontsize : 10}px Helvetica`;
+    this.textAlign = 'center';
+    this.textBaseline = 'middle';
     if (vec != undefined){
         let dpr = window.devicePixelRatio,
             ratio = this.canvas.height/2/dpr;
     
         this.fillText(text, vec.x*ratio, vec.y*ratio);
     }
-
+    this.restore();
 }
 
 CanvasRenderingContext2D.prototype.drawBound = function(vecs, num, {r, g, b}){
