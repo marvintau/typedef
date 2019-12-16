@@ -13,8 +13,14 @@ export default class List extends Array {
         return this[this.length - 1];
     }
 
-    sum(sumFunc=(e)=>e) {
-        return this.reduce((acc, n) => acc + sumFunc(n), 0);      
+    sum() {
+        if(!this.same(e => e.constructor)){
+            throw Error('Sum: cannot be applied to elements with different type');
+        }
+        let Cons = this[0].constructor,
+            func = (acc, n) => acc.add ? acc.add(n) : (acc + n);
+
+        return this.reduce(func, new Cons());
     }
 
     same(func=(e) => e){
@@ -40,13 +46,3 @@ export default class List extends Array {
         } else throw Error('Invalid array dimension for zipping');
     }
 }
-
-(() => {
-    let list = new List(1,2,3);
-    console.assert(list[0]===1 && list.length===3, 'List: Constructor failed');
-    console.assert(list.sum(e=>e*2)===12, 'List: sum failed');
-    console.assert(list.same(e=>Number.isInteger(e)), 'List: same failed');
-
-    let listMapped = list.map(e => [e, e*2]);
-    console.assert(listMapped.zip().last().sum()==12, 'List: zip failed');
-})();

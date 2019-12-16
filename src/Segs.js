@@ -189,14 +189,7 @@ export default class Segs extends List {
     }
 
     torque(){
-        let product = new Vec();
-        for (let seg of this){
-            product.iadd(seg.torque().toProduct());
-        }
-        let mass = this.lens().sum();
-        let center = product.mult((this.length === 0) ? 0 : 1/mass);
-
-        return new Torque({center, mass});
+        return Torque.sum(this.map(e => e.torque()));
     }
 
     copy(){

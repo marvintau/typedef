@@ -216,8 +216,15 @@ class List extends Array {
     return this[this.length - 1];
   }
 
-  sum(sumFunc = e => e) {
-    return this.reduce((acc, n) => acc + sumFunc(n), 0);
+  sum() {
+    if (!this.same(e => e.constructor)) {
+      throw Error('Sum: cannot be applied to elements with different type');
+    }
+
+    let Cons = this[0].constructor,
+        func = (acc, n) => acc.add ? acc.add(n) : acc + n;
+
+    return this.reduce(func, new Cons());
   }
 
   same(func = e => e) {
@@ -244,15 +251,6 @@ class List extends Array {
   }
 
 }
-
-(() => {
-  let list = new List(1, 2, 3);
-  console.assert(list[0] === 1 && list.length === 3, 'List: Constructor failed');
-  console.assert(list.sum(e => e * 2) === 12, 'List: sum failed');
-  console.assert(list.same(e => Number.isInteger(e)), 'List: same failed');
-  let listMapped = list.map(e => [e, e * 2]);
-  console.assert(listMapped.zip().last().sum() == 12, 'List: zip failed');
-})();
 
 /***/ }),
 
@@ -308,8 +306,8 @@ function tes() {
 
   let poly = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"](vecsCircles),
       polyCopy = poly.copy();
-  console.log(poly);
-  poly.shrink(0.05, ctx); // polyCopy.draw(ctx);
+  console.log(poly); // poly.shrink(0.05, ctx);
+  // polyCopy.draw(ctx);
   // poly.draw(ctx);
 } // testRadical();
 
@@ -418,41 +416,18 @@ function testCentroid() {
 function testRadical() {
   let radical = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"]();
   let stroke1 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.4, 0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.4)])),
-      stroke2 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, -0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.3, 0), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.4)])),
+      stroke2 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, -0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.1, 0.1), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.4)])),
       stroke3 = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, -0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.4)]));
-  radical.addStroke(stroke1, [0]);
-  radical.addStroke(stroke2, [0, 1]);
-  radical.addStroke(stroke3, [0, 2]);
-  radical.shrink(-0.02);
+  radical.addStroke(stroke1, [0]); // radical.addStroke(stroke2, [0, 1]);
+
+  radical.addStroke(stroke3, [0, 1]);
+  radical.addStroke(stroke2, [2]); // radical.shrink(-0.02);
+
   radical.draw(ctx, false);
   console.log(radical.contours);
 }
 
 testRadical();
-
-function testCutUndo() {
-  let edges = 6;
-  let circles = [];
-
-  for (let i = 0; i < 1; i++) {
-    let vecs = new _List__WEBPACK_IMPORTED_MODULE_2__["default"](edges + i * 4).fill(0).map((e, n) => new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](n / (edges + i * 4) * 360 + 22.5).mult(0.8 + i * 0.3).add(new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](i * 0.05, 0))),
-        circle = new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs(vecs); // if(i%2 === 0) {circle.flip()};
-
-    console.log(circle.area());
-    circles.push(circle);
-  }
-
-  let poly = new _Radical__WEBPACK_IMPORTED_MODULE_4__["default"](circles);
-  let stroke = new _Stroke__WEBPACK_IMPORTED_MODULE_5__["default"](new _Segs__WEBPACK_IMPORTED_MODULE_3__["default"](0).fromVecs([new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](-0.4, 0.4), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0, 0), new _Vec__WEBPACK_IMPORTED_MODULE_1__["default"](0.4, 0.3)]));
-  poly.counters = stroke.cut(poly.contours);
-  poly.counters[0].undoCutThrough(poly.counters[1]);
-  poly.counters[0].undoCut();
-  poly.counters.splice(1, 1);
-  console.log(poly.counters); // poly.shrink(-0.02);
-  // stroke.draw(ctx);
-
-  poly.draw(ctx, true);
-} // testCutUndo()
 
 /***/ }),
 
@@ -943,18 +918,7 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
   }
 
   torque() {
-    let product = new _Vec__WEBPACK_IMPORTED_MODULE_2__["default"]();
-
-    for (let seg of this) {
-      product.iadd(seg.torque().toProduct());
-    }
-
-    let mass = this.lens().sum();
-    let center = product.mult(this.length === 0 ? 0 : 1 / mass);
-    return new _Torque__WEBPACK_IMPORTED_MODULE_3__["default"]({
-      center,
-      mass
-    });
+    return _Torque__WEBPACK_IMPORTED_MODULE_3__["default"].sum(this.map(e => e.torque()));
   }
 
   copy() {
@@ -1229,14 +1193,25 @@ class Stroke {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Torque; });
+/* harmony import */ var _Vec__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Vec */ "./src/Vec.js");
+
 class Torque {
+  static sum(torques) {
+    let prodSum = torques.map(t => t.toProduct()).reduce((acc, v) => acc.add(v), new _Vec__WEBPACK_IMPORTED_MODULE_0__["default"](0, 0)),
+        massSum = torques.map(t => t.mass).reduce((acc, v) => acc + v, 0);
+    return new Torque({
+      center: prodSum.mult(torques.length === 0 ? 0 : 1 / massSum),
+      mass: massSum
+    });
+  }
+
   constructor({
     center,
     mass
   }) {
     // console.log("new torque", center, mass)
-    this.center = center ? center : new Vec(0, 0);
-    this.mass = mass !== undefined ? mass : 0;
+    this.center = center ? center : new _Vec__WEBPACK_IMPORTED_MODULE_0__["default"](0, 0);
+    this.mass = mass === undefined ? 0 : mass;
   }
 
   toProduct() {
