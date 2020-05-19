@@ -1,3 +1,19 @@
+// The design of seg
+// -----------------
+// 1) Cloning Vector or Not?
+// Line segment is the class for building polygon and path. In our scenario, we have two
+// frequent operation of
+// 
+// * cutting through the polygon and merge them back from the cutting path.
+// * move the cutting path.
+// 
+// The problem of cloning vector, is once we cloned the vector, we will lose the information
+// that if the edge of two polygons are actually sharing same path. Thus, before we really need
+// to modify the polygons, such as shrinking, we will keep the segs created from same vector
+// always refer to same vector object.
+
+import Torque from './Torque';
+
 // https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
 // 
 // note that:
@@ -9,23 +25,31 @@
 // 
 // cross(P1-P3, P3-P4)
 
-function segIntersect(head1, tail1, head2, tail2){
-    let h1h2 = head1.sub(head2),
-        h1t1 = head1.sub(tail1),
-        h2t2 = head2.sub(tail2),
-        detT = h1h2.cross(h2t2),
-        detU = h1t1.cross(h1h2),
+function FourPointIntersect(head1, tail1, head2, tail2){
+    let h1h2 = head1.diff(head2),
+        h1t1 = head1.diff(tail1),
+        h2t2 = head2.diff(tail2),
+        detA = h1h2.cross(h2t2),
+        detB = h1t1.cross(h1h2),
         detS = h1t1.cross(h2t2),
-        t = detT/detS,
-        u = -detU/detS,
-        p = head1.add(tail1.sub(head1).mult(t)),
-        d = detS;
+        ratioA =  detA/detS,
+        ratioB = -detB/detS,
+        point = head1.lerp(ratioA, tail1),
+        det = detS;
     
-    return {t, u, p, d}
+    return {
+        ratioA, // mag(point - head1) / mag(tail1 - head1)
+        ratioB, // mag(point - head2) / mag(tail2 - head2)
+        point, // point
+        det  // h1t1 x h2t2 (for determining the direction)
+    }
 }
 
-import Vec from './Vec';
-import Torque from './Torque';
+function TwoSegIntersect(seg1, seg2){
+    const {head: head1, tail:tail1} = seg1;
+    const {head: head2, tail:tail2} = seg2;
+    return FourPointIntersect(head1, tail1, head2, tail2);
+}
 
 export default class Seg {
     constructor(hd, tl){
@@ -33,74 +57,59 @@ export default class Seg {
         this.tail = tl;
     }
 
-    diff (){
-        return this.tail.sub(this.head);
-    }
-
-    len (){
-        return this.tail.sub(this.head).mag();
-    }
-
-    dir (){
-        return this.tail.sub(this.head).norm();
-    }
-
-    lerp(ratio){
-        return this.head.add(this.tail.sub(this.head).mult(ratio));
-    }
+    // ==============================================
+    // in-place operations / transforms
 
     trans(vec){
-        this.head.iadd(vec);
-        this.tail.iadd(vec);
+        this.head.trans(vec);
+        this.tail.trans(vec);
     }
 
-    rotate(angle){
-        this.head.irotate(angle);
-        this.tail.irotate(angle);
+    rotate(angle, origin){
+        this.head.rotate(angle, origin);
+        this.tail.rotate(angle, origin);
     }
 
     scale(mag){
-        this.head.imult(mag);
-        this.tail.imult(mag);
+        this.head.mult(mag);
+        this.tail.mult(mag);
+    }
+
+    flip(){
+        const {head, tail} = this;
+        this.head = tail;
+        this.tail = head;
+    }
+
+    // ==============================================
+    // operations that producing other type of values
+
+    diff (){
+        const {head, tail} = this;
+        return tail.diff(head);
+    }
+
+    len (){
+        return this.diff().mag();
+    }
+
+    lerp(ratio){
+        const {head, tail} = this;
+        return head.lerp(ratio, tail);
     }
 
     torque(){
-        return new Torque({center:this.lerp(0.5), mass: this.len()});
+        const {head, tail} = this;
+        return Torque.fromVec(tail.diff(head));
     }
 
     intersect(that){
-        return segIntersect(this.head, this.tail, that.head, that.tail);
+        return TwoSegIntersect(this, that);
     }
 
     cross(){
-        return this.head.cross(this.tail);
-    }
-
-    // the previous one connect with the 
-    angleBisect(that){
-        if(that.head == this.tail){
-            
-            let thisDir = this.dir().neg(),
-                thatDir = that.dir();
-
-            if(thisDir.cross(thatDir) === 0){
-                if (thisDir.dot(thatDir) > 0){
-                    return thisDir;
-                } else {
-                    return new Vec(-thisDir.y, thisDir.x);
-                }
-            } else {
-                return thisDir.add(thatDir).mult(Math.sign(thisDir.cross(thatDir))).norm();
-            }
-
-
-        } else console.error('angleBisector is only permitted if two segs share same vec', this, that);
-    }
-
-    reverse(){
-        let temp = this.head;
-        this.head = this.tail;
-        this.tail = temp;
+        const {head, tail} = this;
+        return head.cross(tail);
     }
 
     copy(){

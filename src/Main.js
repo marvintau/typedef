@@ -149,13 +149,13 @@ function testCentroid(){
 function testRadical(){
     let radical = new Radical();
 
-    let stroke1 = new Stroke(new Segs(0).fromVecs([new Vec(-0.4, 0.4), new Vec(0.4, 0.4)])),
-        stroke2 = new Stroke(new Segs(0).fromVecs([new Vec(0.4, -0.4), new Vec(0.1, 0.1), new Vec(0.4, 0.4)])),
-        stroke3 = new Stroke(new Segs(0).fromVecs([new Vec(0.4, -0.4), new Vec(0.4, 0.4)]));
+    let stroke1 = new Stroke(new Segs(0).fromVecs([new Vec(-0.4, 0), new Vec(0.4, 0)]));
+    let stroke2 = new Stroke(new Segs(0).fromVecs([new Vec(0.4, -0.4), new Vec(0.1, 0.1), new Vec(0.4, 0.4)]));
+    let stroke3 = new Stroke(new Segs(0).fromVecs([new Vec(0, -0.4), new Vec(0, 0.4)]));
     radical.addStroke(stroke1, [0]);
-    // radical.addStroke(stroke2, [0, 1]);
-    radical.addStroke(stroke3, [0, 1]);
-    radical.addStroke(stroke2, [2]);
+    radical.addStroke(stroke3, [0, 1], [1]);
+    // radical.addStroke(stroke3, [0]);
+    // radical.addStroke(stroke2, [2]);
     // radical.shrink(-0.02);
     radical.draw(ctx, false);
     console.log(radical.contours);

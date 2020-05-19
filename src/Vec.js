@@ -2,180 +2,162 @@ const EPSILON = 1e-6;
 
 export default class Vec{
     /**
-     * Simple Vector class.
+     * Simple Vec class.
      * 
      * @param {any} x 
      * @param {any} y 
      */
-    constructor(x, y, attr){
-        if(attr === undefined){
-            this.attr = {};
+    constructor(x, y, attr={}){
+        if (y === undefined){
 
-            if (y === undefined){
-                if(x === undefined) {
+            if(x === undefined) {
+                // For nothing given, new vec created
+                
+                this.x = 0;
+                this.y = 0;
+            } else if (x.constructor === Vec){
 
-                    // For nothing given, new vec created
-                    
-                    this.x = 0;
-                    this.y = 0;
-                } else if (x.x !== undefined && x.y !== undefined){
+                // if argument given as {x:1, y:1}
+                
+                this.x = x.x;
+                this.y = x.y;
+            } else if (x.len !== undefined && x.ang !== undefined){
 
-                    // if argument given as {x:1, y:1}
-                    
-                    this.x = x.x;
-                    this.y = x.y;
-                } else if (x.len !== undefined && x.ang !== undefined){
+                // if argument given as {len: 1, ang: 0}
 
-                    // if argument given as {len: 1, ang: 0}
+                this.x = x.len * Math.cos(x.ang*Math.PI/180);
+                this.y = x.len * Math.sin(x.ang*Math.PI/180);
+            } else if (typeof x === 'number'){
 
-                    this.x = x.len * Math.cos(x.ang*Math.PI/180);
-                    this.y = x.len * Math.sin(x.ang*Math.PI/180);
-                } else if (typeof x === 'number'){
+                // if x is a number 
 
-                    // if x is a number 
-
-                    this.x = Math.cos(x*Math.PI/180);
-                    this.y = Math.sin(x*Math.PI/180);
-                }
+                this.x = Math.cos(x*Math.PI/180);
+                this.y = Math.sin(x*Math.PI/180);
             } else {
-                this.x = x;
-                this.y = y;
+                throw Error (`unsupported argument type:${typeof x}, constructor:${x.constructor.name}`)
             }
         } else {
-            this.attr = attr;
             this.x = x;
             this.y = y;
         }
-
-        
+        this.attr = attr;
     }
 
-    equal(vec){
-        return Math.abs(this.x - vec.x) < EPSILON && Math.abs(this.y - vec.y) < EPSILON;
-    }
-
-    /**
-     * 
-     * @param {Vec} vec another vec to be added
-     * @returns {Vec}
-     */
-    add(vec){
-        return new Vec(this.x + vec.x, this.y + vec.y);
-    }
-
-    iadd(vec){
-        this.x += vec.x;
-        this.y += vec.y;
-    }
-    /**
-     * 
-     * @param {Vec} vec another vec to be subtracted
-     * @returns {Vec}
-     */
-    sub(vec){
-        return new Vec(this.x - vec.x, this.y - vec.y);
-    }
-
-    isub(vec){
-        this.x -= vec.x;
-        this.y -= vec.y;
-    }
-
-    /**
-     * 
-     * @param {Vec, number} vec can be either a vec or a scalar. If it's a scalar,
-     *                          then times it both to x and y.
-     * @returns {Vec}
-     */
-    mult(vec){
-        if(vec.x === undefined){
-            return new Vec(this.x * vec, this.y * vec);
+    trans({x, y}, {neg=false}={}){
+        if (neg) {
+            this.x -= x;
+            this.y -= y;
         } else {
-            return new Vec(this.x * vec.x, this.y * vec.y);
+            this.x += x;
+            this.y += y;
         }
     }
 
-    imult(vec){
-        if(vec.x === undefined){
+    mult(vec){
+        if(typeof vec === 'number'){
             this.y *= vec;
             this.x *= vec;
-        } else {
+        } else if (vec.constructor === Vec){
             this.x *= vec.x;
             this.y *= vec.y;
+        } else {
+            throw Error(`invalid parameter type: ${typeof vec}`);
         }
     }
 
+    scale(ratio, about=(new Vec(0, 0))){
+        
+        this.trans(about, {neg: true});
+        this.mult(ratio);
+        this.trans(about);
+    }
+
     /**
-     * transform point in polar manner. returns a new vector relative
-     * to this one.
-     * @param {number} len length
-     * @param {number} ang angle in degree
-     */
-    polar(vec){
-        return new Vec(
-            this.x + vec.len * Math.cos(vec.ang * Math.PI/180),
-            this.y + vec.len * Math.sin(vec.ang * Math.PI/180)
-        )
-    };
-
-    ipolar(vec){
-        this.x += vec.len * Math.cos(vec.ang * Math.PI/180);
-        this.y += vec.len * Math.sin(vec.ang * Math.PI/180);
-    }
-
-    iscale(ratio, about){
-        // console.log(this, ratio, about, "iscale");
-        this.isub(about);
-        this.imult(ratio);
-        this.iadd(about);
-    }
-
-        /**
-     * rotate
+     * # rotate
+     * 
+     * rotate about 
+     * 
      * @param {number} theta angle to rotate in degree.
      */
-    rotate(theta){
+    rotate(theta, origin=(new Vec(0, 0))){
 
+        this.trans(origin, {neg:true});
+
+        const {x, y} = this;
         switch(theta){
-            case 90     : return new Vec(-this.y, this.x);
-            case -90    : return new Vec(this.y, -this.x);
+            case 90 :
+                this.x = -y;
+                this.y =  x;
+                break;
+            case -90 : 
+                this.x =  y;
+                this.y = -x;
+                break;
             case 180    : 
-            case -180   : return new Vec(-this.x, -this.y);
+            case -180   :
+                this.x = -x;
+                this.y = -y;
+                break;
             default: 
                 let rad = theta / 180 * Math.PI,
                 sin = Math.sin(rad),
                 cos = Math.cos(rad);
 
-            return new Vec(
-                this.x * cos - this.y * sin,
-                this.x * sin + this.y * cos
-            )
+                this.x = x * cos - y * sin;
+                this.y = x * sin + y * cos;
         }
 
-    }
-
-    irotate(theta){
-        let vec = this.rotate(theta);
-        this.x = vec.x;
-        this.y = vec.y;
+        this.trans(origin);
     }
 
     neg(){
-        return new Vec(-this.x, -this.y);
+        const {x, y} = this;
+        this.x = -x;
+        this.y = -y;
+    }
+
+    // ==================================================================
+    // creating something new.
+
+    is(vec){
+        return this === vec;
+    }
+
+    // this method should be only used by List.sum method.
+    add({x, y}){
+        return new Vec(this.x + x, this.y + y);
+    }
+
+    diff({x, y}){
+        return new Vec(this.x - x, this.y - y);
+    }
+
+    lerp(ratio, {x, y}){
+        return new Vec(
+            this.x + (x - this.x) * ratio,
+            this.y + (y - this.y) * ratio,
+        )
     }
 
     /**
-     * returns the cross product between this and vec.
-     * also is the result of det
+     * # vector cross product
+     * 
+     * returns the cross product between this and vec, or is the result of
+     * determinant:
      * 
      * |this.x   that.x|
      * |               |
      * |this.y   that.y|
      * 
-     * also, this can be used for determining which side
-     * does the "that" vector resides, left or right.
-     * When the cross product is positive, the "that" is
-     * on LEFT of this vector.
+     * ---
+     * 
+     * Note: 
+     * 1) the cross product conforms to right-hand rule. When A is assigned to
+     *    the index finger, and B to middle, then the thumb is pointing to AxB.
+     * 
+     * 2) When determining of which side does one vector resides on another with
+     *    cross product, according to 1), when AxB is positive, B is on the LEFT
+     *    of A.
      * 
      * @param {Vec} that another vector
      */
@@ -200,24 +182,16 @@ export default class Vec{
         return Math.atan2(this.y, this.x) / Math.PI * 180;
     }
 
-    isNaN(){
-        return (isNaN(this.x) || isNaN(this.y));
-    }
-
-    addAttr(attr){
-        this.attr.push(attr);
+    addAttr(attrName, attrValue){
+        this.attr[attrName] = attrValue;
     }
 
     /**
-     * Set attribute to Vector. overwrite existing attributes.
+     * Set attribute to Vec. overwrite existing attributes.
      * @param {object} attrObject 
      */
     setAttr(attrObject){
         return Object.assign(this.attr, attrObject);
-    }
-
-    removeAttr(attrKey){
-        this.attr[attrKey] = undefined;
     }
 
     /**
@@ -228,16 +202,7 @@ export default class Vec{
         return new Vec(this.x, this.y, JSON.parse(JSON.stringify(this.attr)));
     }
 
-    toArray(){
-        return [this.x, this.y];
-    }
-
-    draw(ctx){
-        ctx.save();
-
-        ctx.strokeStyle = 'gray';
-        ctx.point(this);
-    
-        ctx.restore();
+    toString(){
+        return `(${this.x.toFixed(5)}, ${this.y.toFixed(5)})`
     }
 }

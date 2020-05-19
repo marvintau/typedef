@@ -39,9 +39,9 @@ export default class Radical {
             // console.log(JSON.stringify(contourLabels.map(e => contours[e]), null, 2));
             for (let label of restLabels){
                 unioned.undoCutThrough(contours[label]);
+                console.log(unioned.map(({head, tail}) => [head, tail]).flat(), 'before undo cut');
                 unioned.undoCut();
             }
-            // console.log(unioned, 'unioned');
             return unioned;
         } else throw Error('Radical union: YOU MUST EXPLICITLY SPECIFY THE LABELS OF CONTOURS TO BE UNIONED')
     }
@@ -56,7 +56,7 @@ export default class Radical {
         //    where the stroke will be put.
         let unionedContour = this.union(unioned)
         stroke.trans(unionedContour.centroid().sub(stroke.center()));
-        // console.log('addStroke unioned', unionedContour);
+        console.log('unioned centroidd', unionedContour.centroid());
         if (splitted.length === 0){
             this.contours = stroke.cut(this.contours).copy();
             // console.log('addstroke', this.contours)
@@ -81,27 +81,6 @@ export default class Radical {
         }
     }
 
-    
-    shrink(shrink){
-
-        let bisecs = new List(0);
-        for (let contour of this.contours){
-            bisecs.push([]);
-            for (let i = 0; i < contour.length; i++){
-                let last = (i === 0) ? contour.length - 1 : i - 1;
-                let bisec = contour[last].angleBisect(contour[i]);
-                bisecs.last().push(bisec.mult(shrink));
-            }
-        }
-
-        for (let i = 0; i < this.contours.length; i++){
-            let contour = this.contours[i];
-            for (let j = 0; j < contour.length; j++){
-                contour[j].head.iadd(bisecs[i][j]);
-            }
-        }
-    }
-
     draw(ctx, stroke, color='rgb(0, 0, 0, 0.1)'){
         ctx.strokeStyle = 'black';
         ctx.fillStyle=color;
@@ -121,7 +100,6 @@ export default class Radical {
                 else
                     ctx.point(seg.head);
             }
-            // ctx.point(contour.centroid());
             ctx.text(i, contour.centroid(), Math.abs(contour.area())*80);
         }
         ctx.restore();

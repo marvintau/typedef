@@ -8,44 +8,85 @@ export default class Segs extends List {
         super(...segs);
     }
 
-    conn(){
-        for (let i = 0; i < this.length - 1; i++){
-            this[i+1].head = this[i].tail;
+    static fromVecs(vecs, {closed=false}={}){
+        const actualVecs = closed ? vecs.concat(vecs[0]) : vecs;
+
+        let list = actualVecs.diff(([head, tail])=>new Seg(head, tail));
+        return new Segs(...list);
+    }
+
+    toVecs(){
+        let last;
+        let vecs = [];
+        for (let {head, tail} of this){
+            if (!head.is(last)){
+                vecs.push(head);
+                last = head;
+            }
+            if (!tail.is(last)){
+                vecs.push(tail);
+                last = tail;
+            }
+        }
+
+        // for closed segs (polygon), needed to remove the last one
+        if (last.is(vecs[0])){
+            vecs.pop();
+        }
+        return vecs;
+    }
+
+    trans(transVec){
+        const vecs = this.toVecs();
+
+        for (let vec of vecs){
+            vec.trans(transVec);
         }
     }
 
-    area(){
-        return this.map(seg => seg.cross()).sum()/2;
+    rotate(angle, origin){
+        const vecs = this.toVecs();
+        for (let vec of vecs){
+            vec.rotate(angle, origin);
+        }
     }
 
-    centroid(){
-        if (this.length > 0){
-            let area = this.area();
-            return this
-            .map(e => e.head.add(e.tail).mult(e.cross() / (6 * area)))
-            .reduce((acc, e) => acc.add(e), new Vec(0, 0));
-        } else {
-            return undefined;
+    scale(ratio, origin){
+        const actualOrigin = origin || this[0].head;
+        const vecs = this.toVecs();
+        for (let vec of vecs){
+            vec.mult(ratio, actualOrigin);
         }
-    }    
-
-    fromVecs(vecs){
-        let list = new List(vecs.slice(0, -1), vecs.slice(1))
-        .zip(e=>new Seg(...e));
-
-        while(list.length > 0){
-            this.push(list.pop());
-        }
-        this.reverse();
-        return this;
     }
 
     flip(){
         this.reverse();
         for (let seg of this){
-            seg.reverse();
+            seg.flip();
         }
     }
+
+    area(){
+
+        if (this.length < 3 || this.last().tail !== this[0].head){
+            throw Error('Area can be found from closed segment lists a.k.a polygon');
+        }
+
+        const vals = this.map(seg => 0.5* seg.cross());
+        return vals.sum();
+    }
+
+    centroid(){
+        let area = this.area();
+
+        return this
+            .map(e => {
+                const mid = e.lerp(1/2);
+                mid.mult(e.cross() / (3 * area))
+                return mid;
+            })
+            .sum();
+    }    
 
     lens(){
         let lens = new List(0);
@@ -55,137 +96,106 @@ export default class Segs extends List {
         return lens;
     }
 
-    intersect(other){
+    /**
+     * intersect with a single segment.
+     * 
+     * returns a list, since even a signle segment could create multiple
+     * intersections.
+     * @param {Vec} that 
+     */
+    intersect(that){
         let intersects = new List(0)
-        for (let seg of this){
-            intersects.push(other.intersect(seg));
-        }
-    }
-
-    partialSums(component){
-        let sum = [];
-        for (let seg of this){
-            sum.push(seg.head[component]+seg.tail[component]);
-        }
-        return sum;
-    }
-
-    crosses(){
-        let crosses = [];
-        for(let seg of this){
-            crosses.push(seg.head.cross(seg.tail))
-        }
-    }
-
-    trans(transVec){
-        for (let seg of this){
-            console.log('yay', transVec);
-            seg.head.iadd(transVec);
-        }
-        this.last().tail.iadd(transVec);
-    }
-
-    rotate(angle){
-        let headOffset = this[0].head.copy();
-        this.trans(headOffset.neg());
-        for (let seg of this){
-            seg.tail.irotate(angle);
-        }
-        this.trans(headOffset);
-    }
-
-    scale(ratio){
-        let headOffset = this.segs[0].head.copy();
-        this.trans(headOffset.neg());
-        for (let seg of this){
-            seg.tail.imult(ratio);
-        }
-        this.trans(headOffset);
-    }
-
-    pointAt(ratio){
-        let lens = this.lens(),
-            accum = lens.accum(),
-            given = accum.last() * ratio;
-
-        var ithSeg = 0,
-            lenInSeg = 0;
-        for (let [index, len] of accum.entries()){
-            if (given < len) {
-                ithSeg = index - 1;
-                lenInSeg = len - given;
-                break;
-            }
-        }
-
-        return {
-            point: this[ithSeg].lerp(1 - lenInSeg/lens[ithSeg]),
-            tan: this[ithSeg].dir()
-        };
-    }
-
-    cutEnter(notch, ratio){
-        
-        let seg = this[notch],
-            lerp = seg.lerp(ratio),
-            tail = seg.tail;
-
-        seg.tail = lerp;
-        this.splice(notch+1, 0, new Seg(lerp, tail));
-    }
-
-    cutGoing(notchPrev, point){
-        let seg = this[notchPrev];
-        this.splice(notchPrev+1, 0, new Seg(seg.tail, point), new Seg(point, seg.tail.copy()));
-        this[notchPrev+2].head = this[notchPrev+1].tail;
-    }
-
-    cutThrough(notchPrev, splitPrev){
-
-        let result = [];
-        if (notchPrev < splitPrev){
-            console.log('notch - split - 0')
-            result = [this.slice(notchPrev, splitPrev), this.slice(0, notchPrev+1).concat(this.slice(splitPrev))];
-        } else if (notchPrev > splitPrev){
-            console.log('notch - 0 - split')
-            result = [this.slice(notchPrev).concat(this.slice(0, splitPrev)), this.slice(splitPrev, notchPrev)];
-        } else throw Error('its impossible to have same notchPrev and splitPrev', notchPrev, splitPrev);
-
-        return result;
-    }
-
-    cutThroughRing(notchPrev, splitPrev, ringSegs){
-        let splittedRingSegs = [...ringSegs.slice(splitPrev), ...ringSegs.slice(0, splitPrev+1)];
-        return new Segs(...[...this.slice(0, notchPrev+1), ...splittedRingSegs, ...this.slice(notchPrev)]);
-    }
-
-    undoCut(){
-        let thereIsStillNotch = true;
-        while(thereIsStillNotch) next:{
-            for (let i = 0; i < this.length-1; i++){
-                if (this[i].head.equal(this[i+1].tail) && this[i].tail.equal(this[i+1].head)){
-                    console.log(i, 'undo')
-                    this.splice(i, 2);
-                    console.log(this, this[i-1]);
-                    this[i].head = this[i-1].tail;
-                    break next;
-                }
-            }
-            thereIsStillNotch = false;
-        }
-    }
-
-    undoCutThrough(that){
         for (let i = 0; i < this.length; i++){
-            for (let j = 0; j < that.length; j++){
-                if (this[i].head.equal(that[j].tail) && this[i].tail.equal(that[j].head)){
-                    let thatSlice = [...that.slice(j+1), ...that.slice(0, j)];
-                    console.log('encountered', thatSlice);
-                    this.splice(i+1, ...thatSlice);
-                    return;
-                }
-            }
+            const seg = this[i];
+            const {
+                ratioA:ratioThat,
+                ratioB:ratioThis,
+                point,
+                det
+            } = that.intersect(seg);
+            intersects.push({ratioThis, ratioThat, point, det, index:i});
         }
+        return intersects;
+    }
+
+    /**
+     * cutEnter
+     * make the entrance of a cutting
+     * expected to receive the result from intersection.
+     * @param {object} param0 
+     */
+    cutEnter({index, point}){
+        
+        point.setAttr('cutEntrance', true);
+
+        const {head, tail} = this[indexThis];
+
+        // remove one, create two.
+        this.splice(index, 1, new Seg(head, point), new Seg(point, tail));
+
+        return {index, point}
+    }
+
+    /**
+     * cutGoing
+     * cutting further from the cut entrance.
+     * except the receive the result of cutEnter, or last cutGoing
+     * @param {object} param0 
+     */
+    cutGoing(index, point){
+        let {tail} = this[index];
+        this.splice(index, 0, new Seg(tail, point), new Seg(point, tail));
+
+        return index+1
+    }
+
+    /**
+     * cutThrough
+     * cutting through the polygon / closed segment list.
+     * 
+     * By far, the last point of cutting point is the intersection between the cutting path
+     * and the polygon, on the exit side, now we need to make the polygon into two.
+     * 
+     * The result of plain cutting (not considering the cutting path intersect with itself)
+     * causes two intersections, and finally split the polygon into two. 
+     * 
+     * When cutting a polygon, there is an "entrance" segment and an "exit". The issue here is
+     * that by the cutting path growing on the polygon, the index of exit segment will grow as
+     * well, if its index is greater than the index of entrance segment before cutting.
+     * 
+     * When cutting through a polygon, if the exit index is greater than the entrance index, then
+     * we define the new polygon that doesn't contain the zero-index segment of original polygon
+     * the "left one". otherwise the "right one". ASSUME the segments are indexed in CCW manner.
+     * 
+     *          | Entrance                          | Entrance
+     * +--------+-------+  ^               +--------+-------+  
+     * |        |       |  | index         |        |       |  
+     * |        |       0  | direction     0        |       |  
+     * |        |       |  | (CCW)         |        |       |  
+     * +--------+-------+  |               +--------+-------+  
+     *          | Exit                              | Exit
+     *          V                                   V
+     * We call the one of the new polygons "parent", if it contains the zero segment index
+     * of original polygon, and 'child' for the other. You can imagine the zero segment index
+     * 
+     */
+    cutThrough(enterIndex, exitIndex, point){
+
+        point.setAttr('cutExit', true);
+
+        if (enterIndex < exitIndex){
+            // in this case, exit index changed along with cutting progress.
+            console.log('notch - split - 0')
+            const left = this.slice(0, enterIndex+1).concat(this.slice(exitIndex));
+            const right = this.slice(enterIndex, exitIndex);
+            return {left, right};
+        } else if (enterIndex > exitIndex){
+            console.log('notch - 0 - split')
+            const left = this.slice(enterIndex).concat(this.slice(0, exitIndex));
+            const right = this.slice(exitIndex, enterIndex);
+            return {left, right};
+        } else throw Error('its impossible to have same enterIndex and exitIndex when cutting through', enterIndex, exitIndex);
+
     }
 
     torque(){

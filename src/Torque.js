@@ -5,24 +5,33 @@ export default class Torque{
     static sum(torques){
         let prodSum = torques
                 .map(t => t.toProduct())
-                .reduce((acc, v) => acc.add(v), new Vec(0, 0)),
+                .reduce(({x:accX, y:accY}, {x, y}) => new Vec(accX+x, accY+y), new Vec()),
             massSum = torques
                 .map(t => t.mass)
                 .reduce((acc, v) => acc + v, 0);
     
+        prodSum.mult((torques.length === 0) ? 0 : 1/massSum)
+
         return new Torque({
-            center: prodSum.mult((torques.length === 0) ? 0 : 1/massSum),
+            center: prodSum,
             mass : massSum
         })    
     }
 
-    constructor({center, mass}){
+    static fromVec(vec){
+        return new Torque({center:(new Vec()).lerp(0.5, vec), mass: vec.mag()});
+    }
+
+    constructor({center=new Vec(), mass=0}={}){
         // console.log("new torque", center, mass)
-        this.center = center ? center : new Vec(0, 0);
-        this.mass = mass === undefined ? 0 : mass;
+        this.center = center;
+        this.mass   = mass;
     }
 
     toProduct(){
-        return this.center.mult(this.mass);
+        const {center, mass} = this;
+        const copy = center.copy();
+        copy.mult(mass);
+        return copy;
     }
 }
