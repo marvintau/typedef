@@ -1,6 +1,6 @@
 // Extended JavaScript native Array class with handy methods.
 
-class List extends Array {
+export default class List extends Array {
     constructor(...args){
         super(...args);
     }
@@ -26,7 +26,7 @@ class List extends Array {
 
         return this.reduce(func, new Cons());
     }
-
+    
     same(func=(e) => e){
         return this.every((v, i, a) => func(v) === func(a[0]));
     }
@@ -61,5 +61,3 @@ class List extends Array {
     }
 
 }
-
-module.exports = List;

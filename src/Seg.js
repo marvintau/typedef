@@ -115,4 +115,8 @@ export default class Seg {
     copy(){
         return new Seg(this.head.copy(), this.tail.copy());
     }
+
+    toString() {
+        return `[${this.head.toString()} ${this.tail.toString()}]`
+    }
 }

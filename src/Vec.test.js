@@ -1,4 +1,4 @@
-const Vec = require('./Vec');
+import Vec from './Vec';
 
 describe('creating', () => {
 

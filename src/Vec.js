@@ -203,6 +203,10 @@ export default class Vec{
     }
 
     toString(){
-        return `(${this.x.toFixed(5)}, ${this.y.toFixed(5)})`
+        if (Object.keys(this.attr).length > 0){
+            return `(${this.x.toFixed(5)}, ${this.y.toFixed(5)}) {${Object.entries(this.attr).filter(([, v]) => v !== undefined).map(([k, v]) => `${k}:${v}`).join(', ')}}`
+        } else {
+            return `(${this.x.toFixed(5)}, ${this.y.toFixed(5)})`
+        }
     }
 }

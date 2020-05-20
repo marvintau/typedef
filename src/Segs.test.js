@@ -1,7 +1,13 @@
-const Segs = require('./Segs');
-const Seg = require('./Seg');
-const Vec = require('./Vec');
-const List = require('./List');
+import Segs from './Segs';
+import Seg from './Seg';
+import Vec from './Vec';
+import List from './List';
+
+function createRegularPolygon(edges, radius) {
+  const vecList = List.from([...Array(edges)].map((_, i) => new Vec(radius * i)));
+  return Segs.fromVecs(vecList, {closed: true});
+}
+
 describe('create', () => {
   test('normal', () => {
     const seg1 = new Seg(new Vec(), new Vec(60));
@@ -93,5 +99,72 @@ describe('transform', () => {
       expect(x).toBeCloseTo(2);
       expect(y).toBeCloseTo(3);
     })  
+  })
+})
+
+describe('cutting', () => {
+
+  const polygon = createRegularPolygon(4, 10);
+
+  const point = new Vec(45);
+  const point1 = point.copy();
+  point1.mult(2);
+  const point2 = point.copy();
+  point2.mult(3);
+  const points = [point1, point2];
+
+  let initialSegmentIndex = 0;
+  let cutThroughIndex = 3;
+  let cutEnterIndex, cutGoingEnd;
+  test('cut enter', () => {
+  
+    const {head: origHead, tail: origTail} = polygon[0];
+
+    const {indexGoing} = polygon.cutEnter({index: initialSegmentIndex, point: new Vec(45)});
+    cutEnterIndex = indexGoing;
+
+    const {head} = polygon[0];
+    const {tail} = polygon[1];
+
+    expect(head).toBe(origHead);
+    expect(tail).toBe(origTail);
+    expect(cutEnterIndex).toBe(initialSegmentIndex);
+
+    cutThroughIndex += 1;
+  })
+
+  test('cut going', () => {
+    const {indexGoing} = polygon.cutGoing({index: cutEnterIndex, points});
+    // cutGoingIndex2 = index2;
+
+    const vecs0 = polygon.slice(cutEnterIndex+1, cutEnterIndex + 1 + points.length).toVecs();
+    const vecs1 = polygon.slice(indexGoing + 1, indexGoing + 1 + points.length).toVecs().reverse();
+
+    expect(vecs0).toEqual(vecs1);
+    expect(indexGoing).toBe(cutEnterIndex + points.length);
+    cutGoingEnd = indexGoing;
+    cutThroughIndex += points.length * 2;
+  })
+
+  test('cut through', () => {
+    
+    const {left, right} = polygon.cutThrough(cutThroughIndex);
+    console.log(polygon.toString());
+
+    console.log(left.toVecs().map(v => v.toString()).join('\n'), 'left');
+    console.log(right.toVecs().map(v => v.toString()).join('\n'), 'right');
+
+    const decomEnds = (segs) => {
+      const heads = segs.map(({head}) => head);
+      const tails = segs.map(({tail}) => tail);
+      tails.unshift(tails.pop());
+      return {heads, tails};
+    }
+
+    const {heads:leftHeads, tails: leftTails} = decomEnds(left);
+    const {heads:rightHeads, tails: rightTails} = decomEnds(right);
+
+    expect(leftHeads).toEqual(leftTails);
+    expect(rightHeads).toEqual(rightTails);
   })
 })

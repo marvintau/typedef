@@ -1,5 +1,6 @@
-const Torque = require('./Torque');
-const Vec = require('./Vec');
+import Torque from './Torque';
+import Vec from './Vec';
+
 describe('create', () => {
   test('normal',() => {
     const {center:{x, y}, mass} = new Torque({center: new Vec(1, 1), mass: 5});

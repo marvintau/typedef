@@ -1,17 +1,13 @@
 import Seg from './Seg';
-import List from './List';
 
-function intersectHead(cutterSeg, contours){
+function intersectHead(cutterSeg, segs){
     let intersects = [];
     let EPSILON = 1e-10;
 
-    for (let con = 0; con < contours.length; con++){
-        let segs = contours[con];
-        for (let seg = 0; seg < segs.length; seg++){
-            let {t, u, d} = cutterSeg.intersect(segs[seg]);
-            if ( t < EPSILON && u < 1-EPSILON && u > EPSILON ){
-                intersects.push({t, u, d, con, seg});
-            }
+    for (let seg = 0; seg < segs.length; seg++){
+        let {t, u, d} = cutterSeg.intersect(segs[seg]);
+        if ( t < EPSILON && u < 1-EPSILON && u > EPSILON ){
+            intersects.push({t, u, d, con, seg});
         }
     }
     intersects.sort((a, b) => b.t - a.t)
@@ -19,7 +15,7 @@ function intersectHead(cutterSeg, contours){
     return intersects;
 }
 
-function intersectTail(cutterSeg, contours){
+function intersectTail(cutterSeg, segs){
     let intersects = [];
     let EPSILON = 1e-10;
 
@@ -159,11 +155,6 @@ export default class Stroke {
     
                         let [left, right] = contours[entered].cutThrough(notchPrev+1, splitPrev+1);
                         contours.splice(con, 1, left, right);
-                    } else {
-                        console.log('cutting through ring', con);
-                        contours[con].cutEnter(splitPrev, u);
-                        contours[entered] = contours[entered].cutThroughRing(notchPrev+1, splitPrev+1, contours[con]);
-                        contours.splice(con, 1);
                     }
                     entered = undefined;
                     // console.log('contours', contours);
