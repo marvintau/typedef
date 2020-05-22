@@ -1040,98 +1040,58 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Stroke; });
 /* harmony import */ var _Seg__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Seg */ "./src/Seg.js");
+/* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./List */ "./src/List.js");
 
 
-function intersectHead(cutterSeg, segs) {
-  let intersects = [];
-  let EPSILON = 1e-10;
+const EPSILON = 1e-10;
 
-  for (let seg = 0; seg < segs.length; seg++) {
-    let {
-      t,
-      u,
-      d
-    } = cutterSeg.intersect(segs[seg]);
+const lt0 = e => e < EPSILON;
 
-    if (t < EPSILON && u < 1 - EPSILON && u > EPSILON) {
-      intersects.push({
-        t,
-        u,
-        d,
-        con,
-        seg
-      });
-    }
+const gt0 = e => e > EPSILON;
+
+const lt1 = e => e < 1 - EPSILON;
+
+const gt1 = e => e > 1 - EPSILON;
+
+const intersectCrits = {
+  head(t, u) {
+    return lt0(t) && lt1(u) && gt0(u);
+  },
+
+  tail(t, u) {
+    return gt1(t) && lt1(u) && gt0(u);
+  },
+
+  body(t, u) {
+    return gt0(t) && lt1(t) && gt0(u) && lt1(u);
   }
 
-  intersects.sort((a, b) => b.t - a.t); // console.log(intersects, 'headIntersects')
+};
 
-  return intersects;
-}
-
-function intersectTail(cutterSeg, segs) {
-  let intersects = [];
-  let EPSILON = 1e-10;
-
-  for (let con = 0; con < contours.length; con++) {
-    let segs = contours[con];
-
-    for (let seg = 0; seg < segs.length; seg++) {
-      let {
-        t,
-        u,
-        p,
-        d
-      } = cutterSeg.intersect(segs[seg]);
-
-      if (t > 1 - EPSILON && u < 1 - EPSILON && u > EPSILON) {
-        intersects.push({
-          t,
-          u,
-          p,
-          d,
-          con,
-          seg
-        });
-      }
+function intersect(cutterSeg, segs, {
+  position = 'body'
+} = {}) {
+  return segs.map((seg, segIndex) => ({
+    res: cutterSeg.intersect(seg),
+    segIndex
+  })).filter(({
+    res: {
+      ratioA,
+      ratioB
     }
-  }
-
-  intersects.sort((a, b) => a.t - b.t); // console.log(intersects, 'tailIntersects')
-
-  return intersects;
-} // return intersections between all contours of poly, and
-// the given seg, sorted by t parameter.
-
-
-function intersectSeg(cutterSeg, contours) {
-  let intersects = [];
-  let EPSILON = 1e-10;
-
-  for (let con = 0; con < contours.length; con++) {
-    let segs = contours[con];
-
-    for (let seg = 0; seg < segs.length; seg++) {
-      let {
-        t,
-        u,
-        d
-      } = cutterSeg.intersect(segs[seg]);
-
-      if (t < 1 - EPSILON && t > EPSILON && u < 1 - EPSILON && u > EPSILON) {
-        intersects.push({
-          t,
-          u,
-          d,
-          con,
-          seg
-        });
-      }
-    }
-  }
-
-  intersects.sort((a, b) => a.t - b.t);
-  return intersects;
+  }) => intersectCrits[position](ratioA, ratioB)).map(({
+    ratioA: ratioCutter,
+    ratioB: ratioCuttee,
+    det
+  }) => ({
+    ratioCutter,
+    ratioCuttee,
+    det
+  })).sort(({
+    ratioA: rP
+  }, {
+    ratioA: rN
+  }) => rN - rP);
 }
 
 class Stroke {
@@ -1165,96 +1125,46 @@ class Stroke {
     this.displayed = this.segs.copy();
   }
 
-  draw(ctx, stroke) {
-    ctx.strokeStyle = 'black';
-    ctx.beginPath();
-    ctx.drawSegs(this.displayed);
-    ctx.stroke();
-    ctx.save();
-    ctx.fillStyle = "rgb(0, 0, 0, 0.2)";
-
-    for (let [index, seg] of this.segs.entries()) {
-      if (stroke) ctx.text(index, seg.head);else ctx.point(seg.head);
-    }
-
-    ctx.restore();
-  }
-
-  center() {
-    return this.segs.torque().center;
-  }
-
-  cut(contours) {
-    let entered, notchPrev, splitPrev;
+  cut(cuttee) {
+    let notchIndex;
 
     for (let cutter = 0; cutter < this.segs.length; cutter++) nextCutter: {
-      let cutterSeg = this.segs[cutter];
+      const cutterSeg = this.segs[cutter];
+      const position = cutter === 0 ? 'head' : cutter === this.segs.length - 1 ? 'tail' : 'body';
+      const intersects = intersect(cutterSeg, cuttee, {
+        position
+      });
+      if (intersects.length === 0) continue; // before encountering the cutted polygon
 
-      if (cutter === 0) {
-        let headIntersects = intersectHead(cutterSeg, contours);
-
-        if (headIntersects.length > 0) {
-          let {
-            t,
-            con,
-            d
-          } = headIntersects[0];
-          console.log('head', con, t, d);
-          if (d < 0) cutterSeg.head.iadd(cutterSeg.diff().mult(t - 0.01));
+      if (notchIndex === undefined) {
+        // skip this one;
+        if (intersects.length === 0) {
+          continue;
+        } else {
+          const intersect = position === 'head' ? intersects.pop() : intersects[0];
+          const {
+            point: head,
+            segIndex
+          } = intersect;
+          const res = cuttee.cutEnter({
+            index: segIndex,
+            point: head
+          });
+          notchIndex = res.indexGoing;
         }
-      }
-
-      if (cutter === this.segs.length - 1) {
-        let tailIntersects = intersectTail(cutterSeg, contours);
-
-        if (tailIntersects.length > 0) {
-          let {
-            t,
-            con,
-            d,
-            p
-          } = tailIntersects[0];
-          if (d > 0) cutterSeg.tail.iadd(p.sub(cutterSeg.tail).mult(t));
+      } else {
+        // means we havent reach the exit yet.
+        if (intersect.length === 0) {
+          const res = contours[entered].cutGoing({
+            index: notchIndex,
+            point
+          });
         }
       }
 
       if (entered !== undefined) {
         // console.log(entered, contours);
-        contours[entered].cutGoing(notchPrev, cutterSeg.head);
         notchPrev += 1;
-      } // find the intersections bettwen the segment from cutter
-      // stroke and from all contours. Sort them by the distance
-      // bettwen the intersection to the head of cutter segment.
-
-
-      while (true) {
-        let intersects = intersectSeg(cutterSeg, contours);
-        if (intersects.length === 0) break;
-        let {
-          u,
-          d,
-          con,
-          seg
-        } = intersects[0];
-
-        if (entered === undefined) {
-          console.log('entered', con);
-          entered = con;
-          notchPrev = seg;
-          contours[entered].cutEnter(notchPrev, u);
-        } else {
-          splitPrev = seg;
-
-          if (entered === con) {
-            console.log('cutting through self');
-            contours[entered].cutEnter(splitPrev, u);
-            notchPrev += notchPrev > splitPrev ? 1 : 0;
-            let [left, right] = contours[entered].cutThrough(notchPrev + 1, splitPrev + 1);
-            contours.splice(con, 1, left, right);
-          }
-
-          entered = undefined; // console.log('contours', contours);
-        }
       }
     }
 
