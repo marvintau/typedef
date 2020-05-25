@@ -4,7 +4,7 @@ import Vec from './Vec';
 import List from './List';
 
 function createRegularPolygon(edges, radius) {
-  const vecList = List.from([...Array(edges)].map((_, i) => new Vec(radius * i)));
+  const vecList = List.from([...Array(edges)].map((_, i) => new Vec({ang:i/edges*360, len:radius})));
   return Segs.fromVecs(vecList, {closed: true});
 }
 
@@ -166,5 +166,14 @@ describe('cutting', () => {
 
     expect(leftHeads).toEqual(leftTails);
     expect(rightHeads).toEqual(rightTails);
+  })
+
+  test ('cut', () => {
+    const polygon = createRegularPolygon(4, 4);
+    const vecs = List.from([new Vec(6, 2.5), new Vec(2, 2.5), new Vec(-2, 2.5), new Vec(-6, 2.5)]);
+    const segs = Segs.fromVecs(vecs);
+
+    // const res = segs.cut(polygon);
+    console.log(polygon, 'cut')
   })
 })

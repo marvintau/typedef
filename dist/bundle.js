@@ -747,6 +747,42 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+const EPSILON = 1e-10;
+
+const lt0 = e => e < EPSILON;
+
+const gt0 = e => e > EPSILON;
+
+const lt1 = e => e < 1 - EPSILON;
+
+const gt1 = e => e > 1 - EPSILON;
+
+const intersectCrits = {
+  head(t, u) {
+    return lt0(t) && lt1(u) && gt0(u);
+  },
+
+  tail(t, u) {
+    return gt1(t) && lt1(u) && gt0(u);
+  },
+
+  body(t, u) {
+    return gt0(t) && lt1(t) && gt0(u) && lt1(u);
+  }
+
+};
+
+function intersect(cutterSeg, segs, {
+  position = 'body'
+} = {}) {
+  return segs.map((seg, segIndex) => ({
+    res: cutterSeg.intersect(seg),
+    segIndex
+  })); // .filter(({res:{ratioA, ratioB}}) => intersectCrits[position](ratioA, ratioB))
+  // .map(({ratioA:ratioCutter, ratioB:ratioCuttee, det}) => ({ratioCutter, ratioCuttee, det}))
+  // .sort(({ratioA:rP}, {ratioA:rN}) => rN - rP);
+}
+
 class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
   constructor(...segs) {
     super(...segs);
@@ -1006,6 +1042,64 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0__["default"] {
     };
   }
 
+  cut(cuttee) {
+    let notchIndex;
+
+    for (let cutter = 0; cutter < this.length; cutter++) {
+      const cutterSeg = this[cutter];
+      const position = cutter === 0 ? 'head' : cutter === this.length - 1 ? 'tail' : 'body';
+      const intersects = intersect(cutterSeg, cuttee, {
+        position
+      });
+      console.log(intersects, 'intersects'); // before encountering the cutted polygon
+
+      if (notchIndex === undefined) {
+        // the current segment hasn't reached polygon edge.
+        if (intersects.length === 0) {
+          console.log(`Cutter seg: ${cutter} pos:${position}, not reached yet`);
+          continue;
+        }
+
+        ;
+        const intersect = position === 'head' ? intersects.pop() : intersects[0];
+        const {
+          point: head,
+          segIndex
+        } = intersect;
+        const resHead = cuttee.cutEnter({
+          index: segIndex,
+          point: head
+        });
+        notchIndex = resHead.indexGoing;
+        const resTail = cuttee.cutGoing({
+          index: notchIndex,
+          point: cutterSeg.tail
+        });
+        notchIndex = resTail.indexGoing;
+      } else {
+        // the whole segment of the stroke is inside the polygon
+        if (intersects.length === 0) {
+          const resGoing = polygon.cutGoing({
+            index: notchIndex,
+            point: cutterSeg.tail
+          });
+          notchIndex = resGoing.indexGoing;
+        } else {
+          const {
+            point,
+            segIndex
+          } = intersects[0];
+          const resGoing = polygon.cutGoing({
+            index: notchIndex,
+            point
+          });
+        }
+      }
+    }
+
+    return cuttee;
+  }
+
   torque() {
     return _Torque__WEBPACK_IMPORTED_MODULE_3__["default"].sum(this.map(e => e.torque()));
   }
@@ -1043,57 +1137,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./List */ "./src/List.js");
 
 
-const EPSILON = 1e-10;
-
-const lt0 = e => e < EPSILON;
-
-const gt0 = e => e > EPSILON;
-
-const lt1 = e => e < 1 - EPSILON;
-
-const gt1 = e => e > 1 - EPSILON;
-
-const intersectCrits = {
-  head(t, u) {
-    return lt0(t) && lt1(u) && gt0(u);
-  },
-
-  tail(t, u) {
-    return gt1(t) && lt1(u) && gt0(u);
-  },
-
-  body(t, u) {
-    return gt0(t) && lt1(t) && gt0(u) && lt1(u);
-  }
-
-};
-
-function intersect(cutterSeg, segs, {
-  position = 'body'
-} = {}) {
-  return segs.map((seg, segIndex) => ({
-    res: cutterSeg.intersect(seg),
-    segIndex
-  })).filter(({
-    res: {
-      ratioA,
-      ratioB
-    }
-  }) => intersectCrits[position](ratioA, ratioB)).map(({
-    ratioA: ratioCutter,
-    ratioB: ratioCuttee,
-    det
-  }) => ({
-    ratioCutter,
-    ratioCuttee,
-    det
-  })).sort(({
-    ratioA: rP
-  }, {
-    ratioA: rN
-  }) => rN - rP);
-}
-
 class Stroke {
   constructor(segList, closed) {
     this.segs = segList;
@@ -1123,52 +1166,6 @@ class Stroke {
     }
 
     this.displayed = this.segs.copy();
-  }
-
-  cut(cuttee) {
-    let notchIndex;
-
-    for (let cutter = 0; cutter < this.segs.length; cutter++) nextCutter: {
-      const cutterSeg = this.segs[cutter];
-      const position = cutter === 0 ? 'head' : cutter === this.segs.length - 1 ? 'tail' : 'body';
-      const intersects = intersect(cutterSeg, cuttee, {
-        position
-      });
-      if (intersects.length === 0) continue; // before encountering the cutted polygon
-
-      if (notchIndex === undefined) {
-        // skip this one;
-        if (intersects.length === 0) {
-          continue;
-        } else {
-          const intersect = position === 'head' ? intersects.pop() : intersects[0];
-          const {
-            point: head,
-            segIndex
-          } = intersect;
-          const res = cuttee.cutEnter({
-            index: segIndex,
-            point: head
-          });
-          notchIndex = res.indexGoing;
-        }
-      } else {
-        // means we havent reach the exit yet.
-        if (intersect.length === 0) {
-          const res = contours[entered].cutGoing({
-            index: notchIndex,
-            point
-          });
-        }
-      }
-
-      if (entered !== undefined) {
-        // console.log(entered, contours);
-        notchPrev += 1;
-      }
-    }
-
-    return contours; // console.log(contours);
   }
 
 }

@@ -3,6 +3,35 @@ import Seg from './Seg';
 import Vec from './Vec';
 import Torque from './Torque';
 
+const EPSILON = 1e-10;
+
+const lt0 = e => e < EPSILON;
+const gt0 = e => e > EPSILON;
+const lt1 = e => e < 1 - EPSILON;
+const gt1 = e => e > 1 - EPSILON;
+
+const intersectCrits = {
+    head(t, u){
+        return lt0(t) && lt1(u) && gt0(u);
+    },
+    tail(t, u){
+        return gt1(t) && lt1(u) && gt0(u);
+    },
+    body(t, u){
+        return gt0(t) && lt1(t) && gt0(u) && lt1(u);
+    }
+}
+
+function intersect(cutterSeg, segs, {position='body'}={}){
+    
+    return segs
+        .map((seg, segIndex) => ({res: cutterSeg.intersect(seg), segIndex}))
+        // .filter(({res:{ratioA, ratioB}}) => intersectCrits[position](ratioA, ratioB))
+        // .map(({ratioA:ratioCutter, ratioB:ratioCuttee, det}) => ({ratioCutter, ratioCuttee, det}))
+        // .sort(({ratioA:rP}, {ratioA:rN}) => rN - rP);
+
+}
+
 export default class Segs extends List {
     constructor(...segs){
         super(...segs);
@@ -173,6 +202,51 @@ export default class Segs extends List {
 
         return {left, right};
     }
+
+    cut(cuttee){
+
+        let notchIndex;
+
+        for (let cutter = 0; cutter < this.length; cutter++) {
+            const cutterSeg = this[cutter];
+            const position = cutter === 0 ? 'head' : cutter === this.length - 1 ? 'tail' : 'body';
+            const intersects = intersect(cutterSeg, cuttee, {position});
+            console.log(intersects, 'intersects');
+            // before encountering the cutted polygon
+            if (notchIndex === undefined){
+
+                // the current segment hasn't reached polygon edge.
+                if (intersects.length === 0) {
+                    console.log(`Cutter seg: ${cutter} pos:${position}, not reached yet`);
+                    continue
+                };
+
+                const intersect = position === 'head'
+                    ? intersects.pop()
+                    : intersects[0];
+
+                const {point:head, segIndex} = intersect;
+                const resHead = cuttee.cutEnter({index: segIndex, point:head});
+                notchIndex = resHead.indexGoing;
+                const resTail = cuttee.cutGoing({index: notchIndex, point:cutterSeg.tail});
+                notchIndex = resTail.indexGoing;
+
+            } else {
+
+                // the whole segment of the stroke is inside the polygon
+                if (intersects.length === 0) {
+                    const resGoing = polygon.cutGoing({index:notchIndex, point: cutterSeg.tail});
+                    notchIndex = resGoing.indexGoing;
+                } else {
+                    const {point, segIndex}= intersects[0];
+                    const resGoing = polygon.cutGoing({index:notchIndex, point});
+                }
+
+            }
+        }
+
+        return cuttee;
+   }
 
     torque(){
         return Torque.sum(this.map(e => e.torque()));
