@@ -1,5 +1,5 @@
-const Seg = require('./Seg');
-const Vec = require('./Vec');
+import Seg from './Seg';
+import Vec from './Vec';
 
 test('create', () => {
   const seg = new Seg(new Vec(), new Vec(1, 1));

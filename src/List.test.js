@@ -1,5 +1,6 @@
-const List = require('./List');
-const Vec = require('./Vec');
+import List from './List';
+import Vec from './Vec';
+
 describe('create', () => {
   test('creaate', () => {
     const list = new List(1,2,3);

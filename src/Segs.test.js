@@ -1,7 +1,8 @@
-const Segs = require('./Segs');
-const Seg = require('./Seg');
-const Vec = require('./Vec');
-const List = require('./List');
+import Seg from './Seg';
+import Vec from './Vec';
+import Segs from './Segs';
+import List from './List';
+
 describe('create', () => {
   test('normal', () => {
     const seg1 = new Seg(new Vec(), new Vec(60));
