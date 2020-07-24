@@ -1,5 +1,4 @@
 import Seg from './Seg';
-import List from './List';
 
 function intersectHead(cutterSeg, contours){
     let intersects = [];

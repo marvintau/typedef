@@ -892,7 +892,8 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0___default.a {
     const {
       head,
       tail
-    } = this[indexThis]; // remove one, create two.
+    } = this[index]; // remove one, create two.
+    // Meanwhile, notice that 
 
     this.splice(index, 1, new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](head, point), new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](point, tail));
     return {
@@ -908,12 +909,18 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0___default.a {
    */
 
 
-  cutGoing(index, point) {
+  cutGoing({
+    index,
+    point
+  }) {
     let {
       tail
     } = this[index];
-    this.splice(index, 0, new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](tail, point), new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](point, tail));
-    return index + 1;
+    this.splice(index + 1, 0, new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](tail, point), new _Seg__WEBPACK_IMPORTED_MODULE_1__["default"](point, tail));
+    return {
+      index: index + 1,
+      point
+    };
   }
   /**
    * cutThrough
@@ -1000,9 +1007,6 @@ class Segs extends _List__WEBPACK_IMPORTED_MODULE_0___default.a {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Stroke; });
 /* harmony import */ var _Seg__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Seg */ "./src/Seg.js");
-/* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./List */ "./src/List.js");
-/* harmony import */ var _List__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_List__WEBPACK_IMPORTED_MODULE_1__);
-
 
 
 function intersectHead(cutterSeg, contours) {

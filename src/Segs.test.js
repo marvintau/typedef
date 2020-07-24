@@ -96,3 +96,63 @@ describe('transform', () => {
     })  
   })
 })
+
+describe('cut', () => {
+
+  const N = 10;
+
+  const poly = Segs.fromVecs(new List(...[...Array(N)].map((n, i) => new Vec(i*360/N))), {closed:true});
+  let enterIndex = Math.floor(Math.random() * N);
+  let exitIndex = Math.floor(Math.random() * N + 1) % N;
+
+  console.log(enterIndex, exitIndex, 'enter & exit');
+
+  test('cut entering', () => {
+
+    const {head, tail} = poly[enterIndex];
+    
+    const point = head.lerp(0.5, tail);
+    const insertion = {index:enterIndex, point};
+    const result = poly.cutEnter(insertion);
+
+    expect(poly.length).toBe(N + 1);
+    expect(result).toEqual(insertion);
+    expect(poly[enterIndex].tail).toBe(point);
+    expect(poly[enterIndex+1].head).toBe(point);
+
+    for (let i = 0; i < poly.length - 1; i++) {
+      expect(poly[i].tail).toBe(poly[i+1].head)
+    }  
+  })
+
+  test('cut going', () => {
+    const goingIndex = enterIndex + 1;
+    
+    for(let i = 0, insertion = {index: goingIndex, point: new Vec()}; i < Math.random()*10 + 5; i ++) {
+      const {index:prevIndex} = insertion;
+      const point = new Vec(Math.random(), Math.random());
+      insertion = poly.cutGoing({...insertion, point});
+
+      expect(insertion).toHaveProperty('index', prevIndex + 1);
+      expect(insertion).toHaveProperty('point', point);
+    }  
+
+    for (let i = 0; i < poly.length - 1; i++) {
+      expect(poly[i].tail).toBe(poly[i+1].head)
+    }  
+  })
+
+  test('cutting through', () => {
+    const {left, right} = poly.cutThrough(enterIndex, exitIndex, new Vec(Math.random(), Math.random()));
+    
+    console.log(left);
+
+    for (let i = 0; i < left.length; i++) {
+      expect(left[i].tail).toBe(left[(i+1)%left.length].head)
+    }
+
+    for (let i = 0; i < right.length; i++) {
+      expect(right[i].tail).toBe(right[(i+1)%left.length].head);
+    }
+  })
+})

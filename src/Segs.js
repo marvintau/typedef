@@ -128,9 +128,10 @@ export default class Segs extends List {
         
         point.setAttr('cutEntrance', true);
 
-        const {head, tail} = this[indexThis];
+        const {head, tail} = this[index];
 
         // remove one, create two.
+        // Meanwhile, notice that 
         this.splice(index, 1, new Seg(head, point), new Seg(point, tail));
 
         return {index, point}
@@ -142,11 +143,11 @@ export default class Segs extends List {
      * except the receive the result of cutEnter, or last cutGoing
      * @param {object} param0 
      */
-    cutGoing(index, point){
+    cutGoing({index, point}){
         let {tail} = this[index];
-        this.splice(index, 0, new Seg(tail, point), new Seg(point, tail));
+        this.splice(index+1, 0, new Seg(tail, point), new Seg(point, tail));
 
-        return index+1
+        return {index: index+1, point}
     }
 
     /**
