@@ -120,21 +120,41 @@ export default class Segs extends List {
 
     /**
      * cutEnter
-     * make the entrance of a cutting
+     * --------
+     * make the entrance of a cutting by giving a starting point.
      * expected to receive the result from intersection.
+     *
+     * **cutEnter receives a parameter set containing:**
+     * cutTip: the index of segment to be break with the new given point.
+     * cutExit: the index of segment to be cut through.
+     * point: the new point to be inserted in.
+     * 
+     * **cutEnter returns a parameter set containing:**
+     * cutTip: updated segment index for following cutGoing or cutThrough operation.
+     * cutExit: updated index of cutting-through segment.
+     * point: the newly added point.
+     * 
+     * Note that the cutTip will be used in multiple scenario. It
+     * always means the index of the segment, of which the tail is
+     * the actual cut tip point. According to the definition, the
+     * returned cutTip remains same to the given.
+     * 
      * @param {object} param0 
      */
-    cutEnter({index, point}){
+    cutEnter({cutTip, cutExit, point}){
         
-        point.setAttr('cutEntrance', true);
+        point.setAttr({cutEntrance: true});
 
-        const {head, tail} = this[index];
+        const {head, tail} = this[cutTip];
 
-        // remove one, create two.
-        // Meanwhile, notice that 
-        this.splice(index, 1, new Seg(head, point), new Seg(point, tail));
+        // replace one with two.
+        this.splice(cutTip, 1, new Seg(head, point), new Seg(point, tail));
 
-        return {index, point}
+        return {
+            cutTip,
+            cutExit: cutExit > cutTip ? cutExit + 1 : cutExit,
+            point
+        }
     }
 
     /**
@@ -143,11 +163,20 @@ export default class Segs extends List {
      * except the receive the result of cutEnter, or last cutGoing
      * @param {object} param0 
      */
-    cutGoing({index, point}){
-        let {tail} = this[index];
-        this.splice(index+1, 0, new Seg(tail, point), new Seg(point, tail));
+    cutGoing({cutTip, cutExit, point}){
 
-        return {index: index+1, point}
+        point.setAttr({cutGoing: true});
+
+        let {tail} = this[cutTip];
+
+        // add two after current one.
+        this.splice(cutTip + 1, 0, new Seg(tail, point), new Seg(point, tail));
+
+        return {
+            cutTip: cutTip + 1,
+            cutExit: cutExit > cutTip ? cutExit + 2 : cutExit,
+            point
+        }
     }
 
     /**
@@ -180,22 +209,22 @@ export default class Segs extends List {
      * of original polygon, and 'child' for the other. You can imagine the zero segment index
      * 
      */
-    cutThrough(enterIndex, exitIndex, point){
+    cutThrough({cutTip, cutExit, point}){
 
-        point.setAttr('cutExit', true);
+        point.setAttr({cutExit: true});
 
-        if (enterIndex < exitIndex){
+        if (cutTip < cutExit){
             // in this case, exit index changed along with cutting progress.
             console.log('notch - split - 0')
-            const left = this.slice(0, enterIndex+1).concat(this.slice(exitIndex));
-            const right = this.slice(enterIndex, exitIndex);
+            const left = this.slice(0, cutTip+1).concat(this.slice(cutExit));
+            const right = this.slice(cutTip, cutExit);
             return {left, right};
-        } else if (enterIndex > exitIndex){
+        } else if (cutTip > cutExit){
             console.log('notch - 0 - split')
-            const left = this.slice(enterIndex).concat(this.slice(0, exitIndex));
-            const right = this.slice(exitIndex, enterIndex);
+            const left = this.slice(cutTip).concat(this.slice(0, cutExit+1));
+            const right = this.slice(cutExit, cutTip+1);
             return {left, right};
-        } else throw Error('its impossible to have same enterIndex and exitIndex when cutting through', enterIndex, exitIndex);
+        } else throw Error('its impossible to have same enterIndex and exitIndex when cutting through', cutTip, cutExit);
 
     }
 
