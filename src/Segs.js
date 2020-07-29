@@ -59,6 +59,11 @@ export default class Segs extends List {
         }
     }
 
+    breakAt({index, point}) {
+        const {head, tail} = this[index];
+        this.splice(index, 1, new Seg(head, point), new Seg(point, tail));
+    }
+
     flip(){
         this.reverse();
         for (let seg of this){
@@ -101,21 +106,27 @@ export default class Segs extends List {
      * 
      * returns a list, since even a signle segment could create multiple
      * intersections.
-     * @param {Vec} that 
+     * @param {Segs} that 
      */
-    intersect(that){
-        let intersects = new List(0)
-        for (let i = 0; i < this.length; i++){
-            const seg = this[i];
-            const {
-                ratioA:ratioThat,
-                ratioB:ratioThis,
-                point,
-                det
-            } = that.intersect(seg);
-            intersects.push({ratioThis, ratioThat, point, det, index:i});
+    intersect(that) {
+
+        for(let i = 0; i < this.length; i++) {
+            for (let j = 0; j < that.length; j++) {
+                 const {ratioA: ratioThis, ratioB: ratioThat, point} = this[i].intersect(that[j]);
+                 if (ratioThis === 0){
+
+                 }
+                 if (ratioThis > 0 && ratioThis < 1){
+
+                 }
+                 if (ratioThis >= 0 && ratioThat >= 0 && ratioThis <= 1 && ratioThat <= 1) {
+                    this.breakAt({index: i, point});
+                    that.breakAt({index: j, point});
+                    i++;
+                    j++;
+                 }
+            }
         }
-        return intersects;
     }
 
     /**
@@ -145,10 +156,7 @@ export default class Segs extends List {
         
         point.setAttr({cutEntrance: true});
 
-        const {head, tail} = this[cutTip];
-
-        // replace one with two.
-        this.splice(cutTip, 1, new Seg(head, point), new Seg(point, tail));
+        this.breakAt({index: cutTip, point});
 
         return {
             cutTip,

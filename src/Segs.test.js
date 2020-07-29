@@ -97,6 +97,34 @@ describe('transform', () => {
   })
 })
 
+describe('intersect', () => {
+  const segsX = Segs.fromVecs(new List(...[...Array(4)].map((n, i) => new Vec(i, 1.5))));
+  const segsY = Segs.fromVecs(new List(...[...Array(4)].map((n, i) => new Vec(1.5, i))));
+
+  test('ortho intersect', () => {
+    segsX.intersect(segsY);
+
+    expect(segsX.length).toBe(4)
+    expect(segsY.length).toBe(4);
+    expect(segsX[1].tail).toBe(segsY[1].tail);
+    expect(segsX[1].tail.x).toBeCloseTo(1.5);
+  })
+
+  test('transformed intersect', () => {
+    segsX.rotate(45, new Vec(1.5, 1.4));
+
+    segsX.intersect(segsY);
+
+    console.log(segsX);
+
+    // expect(segsX.length).toBe(4)
+    // expect(segsY.length).toBe(4);
+    // expect(segsX[1].tail).toBe(segsY[1].tail);
+    // expect(segsX[1].tail.x).toBeCloseTo(1.5);
+
+  })
+})
+
 describe('cut', () => {
 
   const N = 10;
