@@ -211,19 +211,67 @@ export default class Segs extends List {
      */
     cutThrough({cutTip, cutExit}){
 
+        // 在这里我们需要特别注意Array.slice方法的重要特性，就是slice的起止下标代表了半开半闭区间
+        // array.slice(a, b)
+        // 所得到的新的Array中，是不包含array[b]的，代表了[a, b)。我们必须要写成
+        // array.slice(a, b+1)
+        // 才有可能得到真正的[a, b]区间的元素。
+
+        // 在下面的代码中，要特别注意slice方法中起止下标的“+1”代表的含义是不一样的。位于start位置
+        // 的+1代表真的要从下一个开始，而位于end位置的+1代表要将最后一个囊括进来。
+
+        // NOTE: 如果你（包括日后的我）无法理解这部分代码，请保持原样，不要修改。
+        const closedSplit = (start, end) => {
+
+            const left = this.slice(end + 1) // From end Succ
+                .concat(this.slice(0, start + 1)) // To start Prev
+                .concat(new Seg(this[start].tail, this[end].tail)); //connect / close
+
+            const right = this.slice(start + 1, end + 1)
+                .concat(new Seg(this[end].tail, this[start].tail));
+          
+            return {left, right};
+        }
+
         if (cutTip < cutExit){
-            // in this case, exit index changed along with cutting progress.
-            console.log('notch - split - 0')
-            const left = this.slice(0, cutTip+1).concat(this.slice(cutExit));
-            const right = this.slice(cutTip, cutExit);
-            return {left, right};
+            return closedSplit(cutTip, cutExit);
         } else if (cutTip > cutExit){
-            console.log('notch - 0 - split')
-            const left = this.slice(cutTip).concat(this.slice(0, cutExit+1));
-            const right = this.slice(cutExit, cutTip+1);
-            return {left, right};
+            return closedSplit(cutExit, cutTip);
         } else throw Error('its impossible to have same enterIndex and exitIndex when cutting through', cutTip, cutExit);
 
+    }
+
+    // cut
+    // ===
+    // the function that integrates all three functions above, for cutting a polygon
+    // with given point set at one time.
+    // Note that when startPos is given, it will calculate the point with startPos,
+    // otherwise use the first point of the points. Same to endPos.
+    cut({points, start:{index:startIndex, pos:startPos}={}, end:{index:endIndex, pos:endPos}={}}) {
+        const pointSet = points.slice();
+        if (startIndex === undefined) {
+            throw Error('cut: startIndex not specified');
+        }
+        if (endIndex === undefined) {
+            throw Error('cut: endIndex not specified');
+        }
+        if (startPos !== undefined) {
+            pointSet.unshift(this[startIndex].lerp(startPos));
+        }
+        if (endPos !== undefined) {
+            pointSet.unshift(this[endIndex].lerp(endPos));
+        }
+        const [firstPoint, ...restPoints] = pointSet;
+
+        let {cutTip, cutExit} = this.cutEnter({cutTip: startIndex, cutExit: endIndex, point: firstPoint});
+        for (let restPoint of restPoints) {
+            const {cutTip: newCutTip, cutExit: newCutExit} = this.cutGoing({cutTip, cutExit, point: restPoint});
+            cutTip = newCutTip;
+            cutExit = newCutExit;
+        }
+        let {left, right} = this.cutThrough({cutTip, cutExit});
+
+        return {left, right};
     }
 
     torque(){

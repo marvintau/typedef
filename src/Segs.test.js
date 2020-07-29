@@ -102,10 +102,15 @@ describe('cut', () => {
   const N = 10;
 
   const poly = Segs.fromVecs(new List(...[...Array(N)].map((n, i) => new Vec(i*360/N))), {closed:true});
+
+  const points = [...Array(Math.floor(Math.random() * 5 + 5))].map(() => new Vec(Math.random(), Math.random()));
+
   let cutTip = Math.floor(Math.random() * N);
   let cutExit = Math.floor(Math.random() * N + 1) % N;
-
   let enterRes = {cutTip, cutExit};
+
+  let leftSep, rightSep;
+  let leftAll, rightAll;
 
   test('cut entering', () => {
 
@@ -134,13 +139,12 @@ describe('cut', () => {
 
   test('cut going', () => {
     
-    for(let i = 0; i < 1; i ++) {
+    for(let i = 0; i < points.length; i ++) {
       const {cutTip:prevTip} = enterRes;
-      const point = new Vec(Math.random(), Math.random());
-      enterRes = poly.cutGoing({...enterRes, point});
+      enterRes = poly.cutGoing({...enterRes, point: points[i]});
 
       expect(enterRes).toHaveProperty('cutTip', prevTip + 1);
-      expect(enterRes).toHaveProperty('point', point);
+      expect(enterRes).toHaveProperty('point', points[i]);
     }  
 
     for (let i = 0; i < poly.length - 1; i++) {
@@ -154,18 +158,24 @@ describe('cut', () => {
   test('cutting through', () => {
     const {left, right} = poly.cutThrough(enterRes);
     
-    // console.log(enterRes)
-    console.log(left);
-    console.log()
-    console.log(right);
+    for (let i = 0; i < left.length; i++) {
+      expect(left[i].tail).toBe(left[(i+1) % left.length].head)
+    }
 
-    // for (let i = 0; i < left.length; i++) {
-    //   console.log(i, left[i], (i+1) % left.length, left[(i+1) % left.length])
-    //   expect(left[i].tail).toBe(left[(i+1) % left.length].head)
-    // }
+    for (let i = 0; i < right.length; i++) {
+      expect(right[i].tail).toBe(right[(i+1)% right.length].head);
+    }
 
-    // for (let i = 0; i < right.length-1; i++) {
-    //   expect(right[i].tail).toBe(right[(i+1)%left.length].head);
-    // }
+    leftSep = left;
+    rightSep = right;
+  })
+
+  test('cut all-in-one', () => {
+
+    const {left:leftAll, right: rightAll} = poly.cut({points, start:{index: cutTip}, end: {index: cutExit}});
+
+    console.log(leftSep.length, leftAll.length);
+    console.log(rightSep.length, rightAll.length);
+
   })
 })
