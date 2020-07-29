@@ -209,9 +209,7 @@ export default class Segs extends List {
      * of original polygon, and 'child' for the other. You can imagine the zero segment index
      * 
      */
-    cutThrough({cutTip, cutExit, point}){
-
-        point.setAttr({cutExit: true});
+    cutThrough({cutTip, cutExit}){
 
         if (cutTip < cutExit){
             // in this case, exit index changed along with cutting progress.
