@@ -17,6 +17,16 @@ class List extends Array {
         return this.slice(1);
     }
 
+    cart(func, {nonSelf}={}) {
+        const grid = this.map((eleo, i, a) => a.map((elei, k) => [eleo, elei, [i, k]])).flat(1);
+        if (nonSelf) {
+            grid.filter(([o, i]) => o !== i).forEach(func)
+        } else {
+            grid.forEach(func);
+        }
+        return this;
+    }
+
     sum() {
         if(!this.same(e => e.constructor)){
             throw Error('Sum: cannot be applied to elements with different type');
@@ -60,6 +70,13 @@ class List extends Array {
         return this.map(e => e.copy ? e.copy() : e);
     }
 
+    toMap(){
+        if (this.every(e => Array.isArray(e) && e.length === 2)) {
+            return new Map(this);
+        } else {
+            throw Error('List must be Map entry form');
+        }
+    }
 }
 
 module.exports = List;

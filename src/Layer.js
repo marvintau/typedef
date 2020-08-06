@@ -1,28 +1,81 @@
-class Layer {
+import List from "./List";
+
+function getPolyPoint(poly, {index, pos}) {
+  const [head, tail] = poly.slice(index, index+2);
+  const lerp = head.lerp(pos, tail);
+
+  return {head, pos, lerp};
+}
+
+export default class Layer {
   constructor(poly) {
     this.poly = poly;
-    this.cuts = [];
+    this.cuts = new List();
     this.subs = {};
   }
 
-  /**
-   * addCut
-   * ------
-   * Add a new cutting point set to current layers.
-   * 
-   * @param {*} points 
-   */
-  addCut(segs) {
-    
-    // 1. add the cut to the cut set.
-    this.cuts.push(segs.copy());
-
-    // 2. check if the new cut intersects with any existing cut. If so,
-    //    insert the intersection point to both cuts.
-    
-
-    // 3. recalcutate subs with new cuts, by apply the cuts sequentially.
+  addCut(cut) {
+    if (Array.isArray(cut)) {
+      this.cuts.push(...cut);
+    } else {
+      this.cuts.push(cut);
+    }
   }
 
-  
+  updateCut() {
+
+    // the reason of not using Segs.copy():
+    // it will also copy the points, not desirable.
+    let polyCopy = this.poly.slice();
+
+    // 1. 首先处理好所有cutter连接在poly上的点，这些intersection应当保存
+    //    在polyCopy中，避免影响到this.poly。对于所有的cuts也建立一份copy
+    //    使得在后续计算cuts之间的intersection时不会影响到原始的this.cuts。
+    let cutsEntries = this.cuts
+    .map(({vecs, head, tail}) => {
+
+      const headEntry = getPolyPoint(polyCopy, head);
+      const tailEntry = getPolyPoint(polyCopy, tail);
+
+      const newVecs = vecs.slice().growEnds({head: headEntry.lerp, tail: tailEntry.lerp});
+
+      return {
+        vecs: newVecs,
+        head: headEntry,
+        tail: tailEntry
+      }
+    });
+
+    // 2. 得到polyCopy每一条边都有哪几条cutter的端点与之对应，并一次性更新
+    //    polyCopy。我们不能够逐个对cutter进行计算的原因是，每次cutter计算
+    //    之后都会对polyCopy造成影响，从而影响下一次cutter的计算。
+    let splitEdges = cutsEntries.map(({head, tail}) => [head, tail]).flat()  //get getPolyPoint entry
+    let splitMap = new Map();
+    for (let {head, pos, lerp} of splitEdges) {
+      if (!splitMap.has(head)) {
+        splitMap.set(head, []);
+      }
+      splitMap.get(head).push({pos, lerp});
+    }
+
+    for (let intersects of splitMap.values()) {
+      intersects.sort(({pos: posA}, {pos: posB}) => posA - posB);
+    }
+
+    polyCopy = polyCopy.map((head, i, a) => {
+      return splitMap.has(head) && (i < a.length - 1)
+      ? [head, splitMap.get(head).map(({lerp}) => lerp)]
+      : head
+    }).flat(Infinity)
+
+    const cutsMap = cutsEntries
+      .map(({vecs}) => vecs)
+      .cart(([prev, succ]) => {
+        prev.intersect(succ);
+      }, {nonSelf: true})
+      .map(vecs => [vecs[0], vecs])
+      .toMap();
+
+    return {polyCopy, cutsMap}
+  }  
 }

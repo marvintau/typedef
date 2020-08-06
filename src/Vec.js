@@ -51,15 +51,18 @@ export default class Vec{
             this.x += x;
             this.y += y;
         }
+        return this;
     }
 
     mult(vec){
         if(typeof vec === 'number'){
             this.y *= vec;
             this.x *= vec;
+            return this;
         } else if (vec.constructor === Vec){
             this.x *= vec.x;
             this.y *= vec.y;
+            return this;
         } else {
             throw Error(`invalid parameter type: ${typeof vec}`);
         }

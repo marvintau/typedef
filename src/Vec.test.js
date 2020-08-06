@@ -1,5 +1,4 @@
 import Vec from './Vec';
-console.log(Vec);
 
 describe('creating', () => {
 
