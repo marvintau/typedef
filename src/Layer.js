@@ -76,6 +76,10 @@ export default class Layer {
       .map(vecs => [vecs[0], vecs])
       .toMap();
 
+    // 3. 对于每一个polygon，应用当前所有的cutsMap，直到没有任何polygon中包含与
+    //    cutsMap共享的vertex，或者没有任何遗留的cutsMap。这两个标准是等价的，
+    //    需要注意，当cuts切割polygon时，polyCopy和cutsMap都会变化，因此无论选择
+    //    测试polyCopy还是cutsMap，都不影响复杂性。
     return {polyCopy, cutsMap}
   }  
 }

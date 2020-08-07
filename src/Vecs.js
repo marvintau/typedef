@@ -1,5 +1,6 @@
 import List from './List';
 import Torque from './Torque';
+import Vec from './Vec';
 
 // 普通的由两点定义的两直线的交点
 // General method of finding intersections between two lines defined by two points
@@ -60,6 +61,9 @@ export default class Vecs extends List {
     }
 
     static fromVecs(vecs, {closed=false}={}){
+        if (!Array.isArray(vecs)) {
+            throw Error('vecs (list of vec) must be an array, or object extended from array');
+        }
         const actualVecs = closed ? vecs.concat(vecs[0]) : vecs;
         return new Vecs(...actualVecs);
     }
@@ -71,20 +75,33 @@ export default class Vecs extends List {
     }
 
     rotate(angle, origin){
-        for (let vec of this){
-            vec.rotate(angle, origin);
+        for (let i = (this[0] === this.last()) ? 1 : 0; i < this.length; i++){
+            this[i].rotate(angle, origin);
         }
     }
 
     scale(ratio, origin){
         const actualOrigin = origin || this[0].head;
-        for (let vec of this){
-            vec.mult(ratio, actualOrigin);
+        for (let i = (this[0] === this.last()) ? 1 : 0; i < this.length; i++){
+            this[i].mult(ratio, actualOrigin);
         }
     }
 
-    breakAt({index, point}) {
-        this.splice(index+1, 0, point);
+    breakAt({index, pos, point}) {
+        if (pos !== undefined) {
+            if (Number.isNaN(pos) || (pos > 1) || (pos < 0)) {
+                throw Error(`When position is given, it should be a real number within 0 to 1, rather than ${pos}`);
+            }
+            const p = this[index].lerp(pos, this[index + 1]);
+            this.splice(index+1, 0, p);
+            return p;
+        } else{
+            if (point === undefined || point.constructor !== Vec) {
+                throw Error('when the breaking point is given, it should be a valid vector');
+            }
+            this.splice(index+1, 0, point);
+            return point;
+        }
     }
 
     growEnds({head, tail}={}){
@@ -95,6 +112,23 @@ export default class Vecs extends List {
             this.push(tail);
         }
         return this;
+    }
+
+    stepwise(segs) {
+
+        if(!Number.isInteger(segs)) {
+            throw Error('the segments must be integer');
+        }
+
+        const head = this[0];
+        const tail = this.last();
+
+        const res = new Vecs();
+        res.push(head);
+        for (let i = 0; i < segs; i++) {
+            res.push(head.lerp((i+1) / segs, tail));
+        }
+        return res;
     }
 
     // 另一种用于分割多边形的思路
@@ -119,10 +153,10 @@ export default class Vecs extends List {
 
         let head, tail;
         for (let i = 0; i < this.length; i ++) {
-            if (polyPoints[i] === cutter[0]){
+            if (this[i] === cutter[0]){
                 head = i;
             }
-            if (polyPoints[i] === cutter.last()){
+            if (this[i] === cutter.last()){
                 tail = i;
             }
             if (head !== undefined && tail !== undefined) {
@@ -162,7 +196,7 @@ export default class Vecs extends List {
         //    那么新的连续线段仍然是一个多边形，头尾相接处在原先多边形的头尾相接处。
         const orig = this.slice(tail)
             .concat(this.slice(0, head + 1))
-            .concat(normedCutter);
+            .concat(cutter.slice());
         
         //   curr是被分割的多边形不包含头尾顶点的一侧。他被分割后的点序为
         //   [head, ..., tail]
@@ -171,7 +205,7 @@ export default class Vecs extends List {
         //   但是不要忘记，闭合线段需要在末尾有一个多余的头顶点的ref，所以最终是
         //   [head, ..., tail, cutter(-2), ..., cutter(0), head]
         const curr = this.slice(head, tail + 1)
-            .concat(normedCutter.slice().reverse())
+            .concat(cutter.slice().reverse())
             .concat(this[head])
 
         return [orig, curr]

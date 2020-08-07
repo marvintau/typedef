@@ -2,10 +2,14 @@ import Vec from './Vec';
 import Vecs from './Vecs';
 import List from './List';
 
+function deg2rad(deg) {
+  return deg/180 * Math.PI;
+}
+
 describe('create', () => {
   test('fromVec', () => {
     const N = Math.floor(Math.random() * 5) + 3
-    const vecList = List.from([...Array(N)].map((_, i) => new Vec(N * i)));
+    const vecList = [...Array(N)].map((_, i) => new Vec(N * i));
 
     const vecs1 = Vecs.fromVecs(vecList);
     expect(vecs1.length).toBe(N);
@@ -64,6 +68,20 @@ describe('transform', () => {
     expect(vecs[1].y).toBeCloseTo(2*1);
     expect(vecs[2].x).toBeCloseTo(  1);
     expect(vecs[2].y).toBeCloseTo(2*1);
+  })
+
+  test('growEnds', () => {
+    const vecs = new Vecs(new Vec(-5, -5), new Vec(), new Vec(5, 5));
+    const newVecRef = vecs.growEnds({head: new Vec(), tail: new Vec()});
+    expect(vecs.length).toBe(5);
+    expect(newVecRef.length).toBe(5);
+  })
+
+  test('stepwise', () => {
+    const vecs = new Vecs(new Vec(-5, -5), new Vec(), new Vec(5, 5));
+    const stepped = vecs.stepwise(5);
+    expect(stepped.length).toBe(6);
+    expect(stepped.diff().map(([head, tail]) => head.diff(tail).mag()).every(e => e === 2 * Math.SQRT2)).toBe(true)
   })
 
   describe('area & centroid', () => {
@@ -143,5 +161,56 @@ describe('intersect', () => {
 
     expect(vecsX.length).toBe(4)
     expect(vecsY.length).toBe(5);
+  })
+})
+
+describe('split', () => {
+  test('should create two new polygons', () => {
+
+    const N = 10
+    const polygon = Vecs.fromVecs([...Array(N)].map((n, i) => new Vec(i/N*360)), {closed:true});
+    polygon.scale(5, new Vec());
+
+    expect(polygon.length).toBe(N+1);
+    expect(polygon[0]).toBe(polygon.last());
+    expect(polygon.every(e => e.mag() - 5 < 1e-5)).toBe(true);
+
+    const enter = polygon.breakAt({
+      index: Math.floor(Math.random() * N/2),
+      pos:Math.random()*0.5 + 0.25
+    })
+
+    const exit = polygon.breakAt({
+      index: Math.floor(Math.random() * N/2 + N/2 + 1),
+      pos:Math.random()*0.5 + 0.25
+    })
+
+    const M = 3;
+    const cutter = Vecs.fromVecs([new Vec(-2, 1), new Vec(2, 1)])
+      .stepwise(M)
+      .growEnds({head: enter, tail: exit});
+
+    const [orig, curr] = polygon.split(cutter);
+
+    expect(orig.diff().some(([head, tail]) => head === tail)).toBe(true);
+    expect(curr.diff().some(([head, tail]) => head === tail)).toBe(true);
+    
+    for (let i = 1; i < orig.length - 1; i++) {
+      for (let j = 0; j < i; j++) {
+        const a = Vecs.from([orig[i], orig[i+1]]);
+        const b = Vecs.from([orig[j], orig[j+1]]);
+        const res = a.intersect(b);
+        expect(res.length).toBe(0);
+      }
+    }
+
+    for (let i = 1; i < curr.length - 1; i++) {
+      for (let j = 0; j < i; j++) {
+        const a = Vecs.from([orig[i], orig[i+1]]);
+        const b = Vecs.from([orig[j], orig[j+1]]);
+        const res = a.intersect(b);
+        expect(res.length).toBe(0);
+      }
+    }
   })
 })
