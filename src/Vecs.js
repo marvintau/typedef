@@ -87,6 +87,13 @@ export default class Vecs extends List {
         }
     }
 
+    reformClosed(){
+        if (this.diff().filter(([head, tail]) => head === tail).length === 1) {
+            const index = this.diff().findIndex(([head, tail]) => head === tail);
+            this.rot(this.length - index - 1);
+        }
+    }
+
     breakAt({index, pos, point}) {
         if (pos !== undefined) {
             if (Number.isNaN(pos) || (pos > 1) || (pos < 0)) {
@@ -143,6 +150,7 @@ export default class Vecs extends List {
     split(cutter) {
 
         if (this.length < 4 || this.last() !== this[0]){
+            console.log(this);
             throw Error('split: not splitting a polygon');
         }
 
@@ -177,12 +185,15 @@ export default class Vecs extends List {
         // 2.a. 我们约定cutter的head总是位于靠近多边形0的一侧，从而保证分割后的两个多边形
         //      上的点仍然是逆时针的顺序。
         if (head > tail) {
+            console.log('case1');
+            [head, tail] = [tail, head];
             cutter.reverse()
         
         // 2.b. 对于cutter本身就是一个闭合连续线段的情况比较tricky，我们需要专门判断它的点
         //      本身是否是顺时针的顺序。你可能会奇怪，为什么一般的多边形点序都是逆时针，这
         //      里却要顺时针呢？答案在下面。
         } else if (head === tail && cutter.area() > 0) {
+            console.log('case2')
             cutter.reverse();
         }
 
@@ -196,7 +207,7 @@ export default class Vecs extends List {
         //    那么新的连续线段仍然是一个多边形，头尾相接处在原先多边形的头尾相接处。
         const orig = this.slice(tail)
             .concat(this.slice(0, head + 1))
-            .concat(cutter.slice());
+            .concat(cutter.slice(1, -1));
         
         //   curr是被分割的多边形不包含头尾顶点的一侧。他被分割后的点序为
         //   [head, ..., tail]
@@ -205,8 +216,13 @@ export default class Vecs extends List {
         //   但是不要忘记，闭合线段需要在末尾有一个多余的头顶点的ref，所以最终是
         //   [head, ..., tail, cutter(-2), ..., cutter(0), head]
         const curr = this.slice(head, tail + 1)
-            .concat(cutter.slice().reverse())
+            .concat(cutter.slice(1, -1).reverse())
             .concat(this[head])
+
+        // console.log(orig, curr, 'orig & curr')
+        // console.log(this.slice(head, tail+1))
+        orig.reformClosed();
+        curr.reformClosed();
 
         return [orig, curr]
     }

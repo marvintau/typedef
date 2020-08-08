@@ -17,6 +17,10 @@ class List extends Array {
         return this.slice(1);
     }
 
+    rot(incr){
+        this.unshift(...this.splice(this.length - incr));
+    }
+
     cart(func, {nonSelf}={}) {
         const grid = this.map((eleo, i, a) => a.map((elei, k) => [eleo, elei, [i, k]])).flat(1);
         if (nonSelf) {

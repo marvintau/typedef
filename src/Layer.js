@@ -22,7 +22,7 @@ export default class Layer {
     }
   }
 
-  updateCut() {
+  updateCut({isLogging} = {}) {
 
     // the reason of not using Segs.copy():
     // it will also copy the points, not desirable.
@@ -80,6 +80,34 @@ export default class Layer {
     //    cutsMap共享的vertex，或者没有任何遗留的cutsMap。这两个标准是等价的，
     //    需要注意，当cuts切割polygon时，polyCopy和cutsMap都会变化，因此无论选择
     //    测试polyCopy还是cutsMap，都不影响复杂性。
-    return {polyCopy, cutsMap}
+    const polys = [polyCopy];
+    while(cutsMap.size > 0) {
+      isLogging && console.log(polys, 'polys')
+      isLogging && console.log(cutsMap, 'cutsmap')
+      doneCut: for (let i = 0; i < polys.length; i++) for (let [head, vecs] of cutsMap) if (polys[i].includes(head)){
+        const [orig, curr] = polys[i].split(vecs);
+        polys.splice(i, 1, orig, curr);
+
+        cutsMap.delete(head);
+
+        for (let vec of vecs) {
+          doneUpdateCuts: for (let remVecs of cutsMap.values()){
+            const remIndex = remVecs.indexOf(vec);
+
+            if (remIndex > 0 && remIndex < remVecs.length - 1) {  
+              const index = remVecs.indexOf(vec);
+              const rest = remVecs.splice(index);
+              remVecs.push(rest[0]);
+              cutsMap.set(rest[0], rest);
+              break doneUpdateCuts;
+            }
+          }
+        }
+
+        break doneCut;
+      }
+    }
+    
+    return {polys, cutsMap};
   }  
 }
