@@ -214,3 +214,18 @@ describe('split', () => {
     }
   })
 })
+
+describe('testing function', () => {
+  test('isEnclosing', () => {
+    const N = 10
+    const polygon = Vecs.fromVecs([...Array(N)].map((n, i) => new Vec(i/N*360)), {closed:true});
+    polygon.scale(5, new Vec());
+
+    const inside = new Vec();
+    const outside = new Vec(100, 0);
+
+    expect(polygon.isEnclosing(inside)).toBe(true);
+    expect(polygon.isEnclosing(outside)).toBe(false);
+  
+  })
+})

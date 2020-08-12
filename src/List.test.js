@@ -34,7 +34,7 @@ describe('funcs', () => {
 
   test ('same', ()=>{
     const list = new List(new Vec(45), new Vec(60));
-    expect(list.same(e => e.constructor)).toBe(true);
+    expect(list.isSame(e => e.constructor)).toBe(true);
   })
 
   test('accum', () => {

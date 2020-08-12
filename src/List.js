@@ -32,7 +32,7 @@ class List extends Array {
     }
 
     sum() {
-        if(!this.same(e => e.constructor)){
+        if(!this.isSame(e => e.constructor)){
             throw Error('Sum: cannot be applied to elements with different type');
         }
         let Cons = this[0].constructor,
@@ -41,7 +41,7 @@ class List extends Array {
         return this.reduce(func, new Cons());
     }
 
-    same(func=(e) => e){
+    isSame(func=(e) => e){
         return this.every((v, i, a) => func(v) === func(a[0]));
     }
 
@@ -52,7 +52,7 @@ class List extends Array {
     }
 
     transpose(func=(e)=>e){
-        if((this[0].length) && (this[0].length > 0) && this.same(e => e.length)){
+        if((this[0].length) && (this[0].length > 0) && this.isSame(e => e.length)){
             let newList = this[0].map((_e, i) => {
                 return func(this.map(e => e[i]));
             })

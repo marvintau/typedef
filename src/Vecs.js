@@ -138,6 +138,39 @@ export default class Vecs extends List {
         return res;
     }
 
+    isEnclosing(another) {
+        return this.diff().map(([head, tail]) => {
+            const a = head.diff(another);
+            const b = tail.diff(another);
+            return Math.sign(b.cross(a));
+        }).isSame();
+    }
+
+    isEnclosingCutter(cutter) {
+        for (let point of cutter.slice(1, -1)) {
+            if (!this.isEnclosing(point)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    isSharingEnds(cutter) {
+        let head, tail;
+        for (let i = 0; i < this.length; i ++) {
+            if (this[i] === cutter[0]){
+                head = i;
+            }
+            if (this[i] === cutter.last()){
+                tail = i;
+            }
+            if (head !== undefined && tail !== undefined) {
+                return {head, tail};
+            }
+        }
+        return {};
+    }
+
     // 另一种用于分割多边形的思路
     // 
     // Note：
@@ -150,27 +183,20 @@ export default class Vecs extends List {
     split(cutter) {
 
         if (this.length < 4 || this.last() !== this[0]){
-            console.log(this);
-            throw Error('split: not splitting a polygon');
+            console.error(this, 'not a polygon');
+            return [this];
         }
 
         // 1. cutter是一个点序列，代表一个连续线段。head和tail分别代表它的头和尾分别
         //    对应当前闭合连续线段（多边形）上顶点的index。如果cutter的两个端点不同时
         //    在当前多边形上，则意味着cutter并不切割当前多边形。由于cutter中包含与其他
         //    cutter相交的intersection，因此可能存在只有一个端点位于多边形上的情况。
-
-        let head, tail;
-        for (let i = 0; i < this.length; i ++) {
-            if (this[i] === cutter[0]){
-                head = i;
-            }
-            if (this[i] === cutter.last()){
-                tail = i;
-            }
-            if (head !== undefined && tail !== undefined) {
-                break;
-            }
+        if (!this.isEnclosingCutter(cutter)) {
+            console.log('not all points of cutter is enclosed by the polygon');
+            return [this];
         }
+
+        let {head, tail} = this.isSharingEnds(cutter);
         if (head === undefined || tail === undefined) {
             console.log('cutter may shares point of this poly, but not cutting.');
             return [this];
